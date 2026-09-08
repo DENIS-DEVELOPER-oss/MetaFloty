@@ -55,22 +55,45 @@ python -c "import secrets; print(secrets.token_hex(32))"
 ### Instalación asistida
 
 ```bash
-sudo METAFLOTPY_REPO=https://github.com/tu-organizacion/metaflotpy.git \
-     METAFLOTPY_DOMINIO=metaflotpy.tudominio.pe \
-     bash despliegue/linux/instalar.sh
+# 1 · Traer el proyecto
+apt update && apt install -y git
+git clone https://github.com/DENIS-DEVELOPER-oss/MetaFloty.git /opt/metaflotpy/app
+
+# 2 · Instalar
+cd /opt/metaflotpy/app
+sudo bash despliegue/linux/instalar.sh                  # acceso por IP
+
+# ...o directamente con dominio:
+sudo METAFLOTPY_DOMINIO=tu-dominio.pe bash despliegue/linux/instalar.sh
 ```
 
-El script instala dependencias, crea el usuario de servicio, el entorno
-virtual, genera la clave, da de alta el servicio systemd y deja la
-configuración de Nginx lista. Al terminar comprueba `/salud`.
+El script instala dependencias, crea el usuario de servicio y el entorno
+virtual, genera la clave de sesión, da de alta el servicio systemd, configura
+Nginx, valida la configuración con `nginx -t` y comprueba de extremo a extremo
+que la aplicación responde a través del proxy antes de darse por terminado.
+
+Es **idempotente**: puedes volver a ejecutarlo para actualizar el código o para
+añadir el dominio más adelante. Nunca sobrescribe la clave de sesión existente.
 
 ### Certificado TLS
 
-Con el dominio ya apuntando al servidor:
+Nginx se instala primero en **HTTP a propósito**: certbot necesita un sitio en
+funcionamiento para validar el dominio, y no puede arrancar si la configuración
+apunta a certificados que todavía no existen.
+
+Con el DNS ya apuntando al servidor:
 
 ```bash
-sudo certbot --nginx -d metaflotpy.tudominio.pe
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d tu-dominio.pe
 ```
+
+certbot añade por sí mismo el bloque 443 con TLS y la redirección desde HTTP.
+No hay que editar nada a mano.
+
+> Si ya tienes certificados propios (emitidos por tu institución), usa
+> `nginx-metaflotpy-https.conf` en lugar del archivo por defecto y ajusta las
+> rutas de `ssl_certificate` y `ssl_certificate_key`.
 
 ### Instalación manual, paso a paso
 
