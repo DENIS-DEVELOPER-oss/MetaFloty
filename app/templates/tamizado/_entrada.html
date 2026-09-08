@@ -1,0 +1,111 @@
+{# Formulario de entrada compartido por los tres modelos granulométricos.
+   Espera en el contexto: mallas_astm, mallas_tyler, tabla_datos (opcional). #}
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h2><i class="bi bi-table"></i> Datos del ensayo de tamizado</h2>
+    <div class="mf-acciones mf-no-print">
+      <button type="button" class="btn btn-sm btn-mf-suave" data-serie="astm" title="Cargar la serie de mallas ASTM">
+        <i class="bi bi-list-ol"></i> Serie ASTM
+      </button>
+      <button type="button" class="btn btn-sm btn-mf-suave" data-serie="tyler" title="Cargar la serie de mallas Tyler">
+        <i class="bi bi-list-ol"></i> Serie Tyler
+      </button>
+      <button type="button" class="btn btn-sm btn-mf-suave" id="mf-ejemplo" title="Cargar un ensayo de ejemplo">
+        <i class="bi bi-magic"></i> Ejemplo
+      </button>
+    </div>
+  </div>
+
+  <form method="POST" id="mf-form-tamizado" data-ajax="#mf-resultados" data-validar data-cargando>
+    <div class="mf-card__body">
+
+      <div class="row g-3 align-items-end mb-3">
+        <div class="col-sm-4 col-lg-3">
+          <label class="form-label" for="peso_total">
+            Peso total de la muestra <span class="mf-sim">W</span>
+          </label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="peso_total" name="peso_total"
+                   step="0.01" min="0.01" placeholder="1000,00"
+                   value="{{ descriptores.peso_total if descriptores else '' }}">
+            <span class="input-group-text">g</span>
+          </div>
+          <div class="form-text">Opcional: si lo dejas vacío se usa la suma de los retenidos.</div>
+        </div>
+        <div class="col-sm-8 col-lg-9">
+          <span class="mf-badge" id="mf-resumen-masa"><i class="bi bi-info-circle"></i> Sin datos</span>
+        </div>
+      </div>
+
+      <div class="mf-tabla-wrap" style="max-height: 420px; overflow-y: auto">
+        <table class="mf-tabla" id="mf-tabla-mallas">
+          <thead>
+            <tr>
+              <th style="width:44px">#</th>
+              <th style="min-width:120px">Malla</th>
+              <th style="min-width:130px">Abertura <small>d (mm)</small></th>
+              <th style="min-width:130px">Peso retenido <small>w (g)</small></th>
+              <th style="min-width:100px">% Retenido</th>
+              <th style="width:56px" class="mf-no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="mf-mallas">
+            {% if tabla_datos %}
+              {% for fila in tabla_datos %}
+              <tr>
+                <td class="mf-col-txt"><span class="mf-faint mf-num" data-indice>{{ loop.index }}</span></td>
+                <td class="mf-col-txt"><input type="text" class="form-control form-control-sm" name="nombre_malla[]" value="{{ fila.nombre }}" autocomplete="off"></td>
+                <td><input type="number" class="form-control form-control-sm text-end" name="abertura[]" value="{{ fila.abertura }}" step="0.001" min="0.001" required></td>
+                <td><input type="number" class="form-control form-control-sm text-end" name="peso_retenido[]" value="{{ fila.peso_retenido }}" step="0.01" min="0"></td>
+                <td><span class="mf-num mf-muted" data-pct>—</span></td>
+                <td class="text-center mf-no-print">
+                  <button type="button" class="btn btn-sm btn-mf-suave" data-accion="quitar-fila" title="Eliminar fila"><i class="bi bi-trash3"></i></button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">Suma de retenidos</td>
+              <td><span id="mf-total-peso" class="mf-num">0,00</span> g</td>
+              <td><span id="mf-total-pct">—</span></td>
+              <td class="mf-no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-3 mf-no-print">
+        <button type="button" class="btn btn-sm btn-mf-suave" id="mf-agregar-malla">
+          <i class="bi bi-plus-lg"></i> Agregar malla
+        </button>
+        <button type="button" class="btn btn-sm btn-mf-suave" id="mf-limpiar">
+          <i class="bi bi-eraser"></i> Limpiar pesos
+        </button>
+        <button type="button" class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-mallas" data-nombre="tamizado-datos">
+          <i class="bi bi-filetype-csv"></i> Exportar datos
+        </button>
+        <span class="mf-faint align-self-center ms-auto d-none d-md-inline">
+          <i class="bi bi-clipboard"></i> Puedes pegar columnas directamente desde Excel sobre la tabla
+        </span>
+      </div>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 align-items-center mf-no-print">
+      <button type="submit" class="btn btn-mf">
+        <i class="bi bi-calculator"></i> {{ boton_texto | default('Calcular análisis') }}
+      </button>
+      <span class="mf-faint">Los resultados se actualizan sin recargar la página.</span>
+    </div>
+  </form>
+</div>
+
+<div class="mf-card mb-3 mf-no-print">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-activity"></i> Vista previa en vivo</h3>
+  </div>
+  <div class="mf-card__body">
+    <div id="mf-vista-previa" class="mf-grafico mf-grafico-sm"></div>
+  </div>
+</div>

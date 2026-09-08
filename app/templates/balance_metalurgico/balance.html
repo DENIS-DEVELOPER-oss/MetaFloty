@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_balance_met %}
+
+{% block titulo %}Balance metalúrgico · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Balance metalúrgico{% endblock %}
+{% block ruta %}Módulo III · Ley de cabeza, recuperación y leyes{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-graph-up-arrow"></i> Módulo III</div>
+    <h1>Balance metalúrgico</h1>
+    <p>Concilia el balance de masa con el de metal para obtener recuperación, razón de concentración
+       y distribución del metal por producto. Compara la <strong>ley de cabeza ensayada</strong> con la
+       <strong>calculada</strong> a partir de los productos y permite elegir cuál de las dos sirve de
+       base para los resultados.</p>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">
+  {% for k in [1, 2, 3] %}
+    <div data-esquema-n="{{ k }}" {% if k != n_concentrados %}hidden{% endif %}>
+      {{ esq_balance_met(k) }}
+    </div>
+  {% endfor %}
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h2><i class="bi bi-sliders"></i> Datos del balance</h2>
+  </div>
+
+  <form method="POST" id="mf-form-metalurgico" data-ajax="#mf-resultados" data-validar data-cargando>
+    {{ formulario.hidden_tag() }}
+    <div class="mf-card__body">
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label" for="tipo_balance">Número de concentrados</label>
+          {{ formulario.tipo_balance(class="form-select", id="tipo_balance") }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="unidad_ley">Unidad de ley</label>
+          {{ formulario.unidad_ley(class="form-select", id="unidad_ley") }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="base_ley">
+            Ley de cabeza para los resultados
+            <i class="bi bi-info-circle mf-faint" title="Determina sobre qué ley se calculan recuperación y enriquecimiento"></i>
+          </label>
+          {{ formulario.base_ley(class="form-select", id="base_ley") }}
+        </div>
+      </div>
+
+      <fieldset class="mf-fieldset">
+        <legend>Alimentación · cabeza</legend>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label" for="f_masa"><span class="mf-sim">F</span> · Masa de alimentación</label>
+            <div class="input-group">
+              {{ formulario.f_masa(class="form-control text-end", id="f_masa") }}
+              <span class="input-group-text">t</span>
+            </div>
+            <div class="form-text">Si la dejas vacía se usa F = 100 como base de cálculo.</div>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label" for="f_ley"><span class="mf-sim">f</span> · Ley de cabeza ensayada</label>
+            <div class="input-group">
+              {{ formulario.f_ley(class="form-control text-end", id="f_ley") }}
+              <span class="input-group-text" data-unidad>%</span>
+            </div>
+            <div class="form-text">
+              Análisis directo de la muestra de cabeza. Opcional si conoces las masas y leyes de
+              todos los productos: en ese caso la ley de cabeza se reconstituye a partir de ellos.
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      {% for i in [1, 2, 3] %}
+      <fieldset class="mf-fieldset" data-conc="{{ i }}" {% if i > n_concentrados %}hidden{% endif %}>
+        <legend>Concentrado {{ i }}</legend>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label" for="c{{ i }}_masa">
+              <span class="mf-sim">C{{ ['₁','₂','₃'][i-1] }}</span> · Masa de concentrado {{ i }}
+            </label>
+            <div class="input-group">
+              {{ formulario['c' ~ i ~ '_masa'](class="form-control text-end", id="c" ~ i ~ "_masa") }}
+              <span class="input-group-text">t</span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label" for="c{{ i }}_ley">
+              <span class="mf-sim">c{{ ['₁','₂','₃'][i-1] }}</span> · Ley de concentrado {{ i }}
+            </label>
+            <div class="input-group">
+              {{ formulario['c' ~ i ~ '_ley'](class="form-control text-end", id="c" ~ i ~ "_ley") }}
+              <span class="input-group-text" data-unidad>%</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+      {% endfor %}
+
+      <fieldset class="mf-fieldset">
+        <legend>Relave</legend>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label" for="t_masa"><span class="mf-sim">T</span> · Masa de relave</label>
+            <div class="input-group">
+              {{ formulario.t_masa(class="form-control text-end", id="t_masa") }}
+              <span class="input-group-text">t</span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label" for="t_ley"><span class="mf-sim">t</span> · Ley de relave</label>
+            <div class="input-group">
+              {{ formulario.t_ley(class="form-control text-end", id="t_ley") }}
+              <span class="input-group-text" data-unidad>%</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="mf-alerta mf-alerta-info">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>
+          <strong>Deja en blanco solo un dato de masa.</strong> El módulo lo deduce del balance.
+          Con un concentrado y las leyes f, c y t conocidas puedes dejar en blanco ambas masas:
+          se aplica la fórmula de dos productos <span class="mono">C/F = (f − t)/(c − t)</span>.
+          Si en cambio mides masas y leyes de todos los productos, la ley de cabeza calculada
+          se vuelve una verificación independiente del ensayo de cabeza.
+        </div>
+      </div>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 align-items-center mf-no-print">
+      <button type="submit" class="btn btn-mf"><i class="bi bi-calculator"></i> Calcular balance</button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-met">
+        <i class="bi bi-magic"></i> Cargar ejemplo
+      </button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-cabeza">
+        <i class="bi bi-clipboard-check"></i> Ejemplo con control de cabeza
+      </button>
+    </div>
+  </form>
+</div>
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">Balance resuelto</h1>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <span class="mf-badge mf-badge-primary">
+          <i class="bi bi-bullseye"></i> Base: ley de cabeza {{ resultados.etiqueta_base }}
+        </span>
+        <span class="mf-badge mf-badge-{{ 'success' if resultados.balance_masa_ok else 'danger' }}">
+          <i class="bi bi-box"></i> Masa {{ 'cerrada' if resultados.balance_masa_ok else 'con desviación' }}
+        </span>
+        {% if resultados.f_ensayada and resultados.cabeza_independiente %}
+        <span class="mf-badge mf-badge-{{ 'success' if resultados.cabeza_ok else 'danger' }}">
+          <i class="bi bi-gem"></i> Cabeza {{ 'conciliada' if resultados.cabeza_ok else 'fuera de tolerancia' }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-success">
+        <div class="mf-kpi__label"><i class="bi bi-bullseye"></i> Recuperación global</div>
+        <div class="mf-kpi__valor">{{ resultados.recuperacion_total | num(2) }}<span class="mf-kpi__unidad">%</span></div>
+        <div class="mf-kpi__nota">Sobre la ley de cabeza {{ resultados.etiqueta_base }}</div>
+      </div>
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-gem"></i> Ley de cabeza usada</div>
+        <div class="mf-kpi__valor">{{ resultados.f_usada | num_auto }}<span class="mf-kpi__unidad">{{ resultados.unidad }}</span></div>
+        <div class="mf-kpi__nota">
+          {% if resultados.f_ensayada and resultados.cabeza_independiente %}
+            Ensayada {{ resultados.f_ensayada | num_auto }} · calculada {{ resultados.f_calculada | num_auto }}
+          {% else %}
+            Reconstituida de los productos
+          {% endif %}
+        </div>
+      </div>
+      <div class="mf-kpi mf-c-info">
+        <div class="mf-kpi__label"><i class="bi bi-arrow-down-up"></i> Razón de concentración</div>
+        <div class="mf-kpi__valor">{{ resultados.ratio_concentracion | num(2) }}</div>
+        <div class="mf-kpi__nota">K = F / ΣC</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-arrow-up-right"></i> Enriquecimiento</div>
+        <div class="mf-kpi__valor">{{ resultados.enriquecimiento_global | num(2) }}<span class="mf-kpi__unidad">×</span></div>
+        <div class="mf-kpi__nota">Ley concentrado / ley de cabeza</div>
+      </div>
+      <div class="mf-kpi mf-c-warning">
+        <div class="mf-kpi__label"><i class="bi bi-trash3"></i> Metal perdido</div>
+        <div class="mf-kpi__valor">{{ (100 - resultados.recuperacion_total) | num(2) }}<span class="mf-kpi__unidad">%</span></div>
+        <div class="mf-kpi__nota">Reportado al relave</div>
+      </div>
+    </div>
+
+    {# ---------------- Conciliación de la ley de cabeza ---------------- #}
+    <div class="mf-card mb-3">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-clipboard-check"></i> Conciliación de la ley de cabeza</h3>
+        {% if resultados.f_ensayada and resultados.cabeza_independiente %}
+        <span class="mf-badge ms-auto mf-badge-{{ 'success' if resultados.cabeza_ok else 'danger' }}">
+          Desviación {{ resultados.dif_cabeza_rel | num(2) }} %
+        </span>
+        {% endif %}
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-grid mf-grid-2">
+          <div>
+            <div class="mf-tabla-wrap">
+              <table class="mf-tabla" id="mf-tabla-cabeza">
+                <thead>
+                  <tr><th class="mf-col-txt">Ley de cabeza</th><th>Valor ({{ resultados.unidad }})</th><th class="mf-col-txt">Origen</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="mf-col-txt">Ensayada · f<sub>ens</sub></td>
+                    <td>{{ resultados.f_ensayada | num_auto if resultados.f_ensayada else '—' }}</td>
+                    <td class="mf-col-txt">Análisis de la muestra de cabeza</td>
+                  </tr>
+                  <tr>
+                    <td class="mf-col-txt">Calculada · f<sub>calc</sub></td>
+                    <td>{{ resultados.f_calculada | num_auto }}</td>
+                    <td class="mf-col-txt">(ΣC·c + T·t) / F</td>
+                  </tr>
+                  {% if resultados.dif_cabeza_abs is not none %}
+                  <tr>
+                    <td class="mf-col-txt">Diferencia absoluta</td>
+                    <td>{{ resultados.dif_cabeza_abs | num_auto }}</td>
+                    <td class="mf-col-txt">f<sub>calc</sub> − f<sub>ens</sub></td>
+                  </tr>
+                  <tr>
+                    <td class="mf-col-txt">Desviación relativa</td>
+                    <td>{{ resultados.dif_cabeza_rel | num(2) }} %</td>
+                    <td class="mf-col-txt">tolerancia habitual ±5 %</td>
+                  </tr>
+                  <tr>
+                    <td class="mf-col-txt">Desbalance de metal</td>
+                    <td>{{ resultados.error_metal | num(3) }}</td>
+                    <td class="mf-col-txt">F·f<sub>ens</sub> − (ΣC·c + T·t)</td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Base adoptada</td>
+                    <td>{{ resultados.f_usada | num_auto }}</td>
+                    <td class="mf-col-txt">ley de cabeza {{ resultados.etiqueta_base }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            {% if resultados.rec_ensayada is not none and resultados.cabeza_independiente %}
+            <div class="mf-tabla-wrap mt-3">
+              <table class="mf-tabla">
+                <thead><tr><th class="mf-col-txt">Recuperación según la base</th><th>Valor (%)</th></tr></thead>
+                <tbody>
+                  <tr><td class="mf-col-txt">Sobre ley de cabeza calculada</td><td>{{ resultados.rec_calculada | num(2) }}</td></tr>
+                  <tr><td class="mf-col-txt">Sobre ley de cabeza ensayada</td><td>{{ resultados.rec_ensayada | num(2) }}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
+          </div>
+
+          <div>
+            {% if graficos.cabeza %}
+              <div class="mf-grafico mf-grafico-sm" data-figura='{{ graficos.cabeza | tojson }}'></div>
+            {% else %}
+              <div class="mf-vacio">
+                <i class="bi bi-clipboard-check"></i>
+                <h3>Sin contraste independiente</h3>
+                <p>Para comparar las dos leyes de cabeza necesitas medir por separado las masas y
+                   leyes de todos los productos, e ingresar además la ley de cabeza ensayada.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mf-alerta mf-alerta-info mb-2">
+      <i class="bi bi-info-circle-fill"></i><div>{{ resultados.metodo }}</div>
+    </div>
+    {% for nota in notas %}
+    <div class="mf-alerta mf-alerta-{{ nota.color }} mb-2">
+      <i class="bi bi-{{ 'check-circle-fill' if nota.color == 'success' else 'exclamation-triangle-fill' if nota.color in ['warning','danger'] else 'info-circle-fill' }}"></i>
+      <div>{{ nota.texto }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="mf-card mt-3 mb-3">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-table"></i> Cuadro de balance metalúrgico</h3>
+        <div class="mf-acciones mf-no-print">
+          <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-met" data-nombre="balance-metalurgico">
+            <i class="bi bi-filetype-csv"></i> Exportar CSV
+          </button>
+          <button class="btn btn-sm btn-mf-suave" data-imprimir><i class="bi bi-printer"></i> Imprimir</button>
+        </div>
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-tabla-wrap">
+          <table class="mf-tabla" id="mf-tabla-met">
+            <thead>
+              <tr>
+                <th class="mf-col-txt">Producto</th>
+                <th>Masa <small>(t)</small></th>
+                <th>% Peso</th>
+                <th>Ley <small>({{ resultados.unidad }})</small></th>
+                <th>Metal contenido</th>
+                <th>Distribución <small>(%)</small></th>
+                <th>Ratio <small>F/C</small></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mf-col-txt">
+                  <strong>F · Alimentación</strong>
+                  <span class="mf-badge mf-badge-primary">{{ resultados.etiqueta_base }}</span>
+                </td>
+                <td>{{ resultados.F | num(2) }}</td>
+                <td>100,00</td>
+                <td>{{ resultados.f_usada | num_auto }}</td>
+                <td>{{ resultados.metal_alimentacion | num(2) }}</td>
+                <td>100,00</td>
+                <td>—</td>
+              </tr>
+              {% for p in resultados.productos %}
+              <tr>
+                <td class="mf-col-txt">{{ p.simbolo }} · {{ p.nombre }}</td>
+                <td>{{ p.masa | num(2) }}</td>
+                <td>{{ p.rendimiento_masa | num(2) }}</td>
+                <td>{{ p.ley | num_auto }}</td>
+                <td>{{ p.metal | num(2) }}</td>
+                <td>{{ p.recuperacion | num(2) }}</td>
+                <td>{{ p.ratio | num(2) if p.ratio else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Suma de productos</td>
+                <td>{{ (resultados.masa_concentrados + resultados.T) | num(2) }}</td>
+                <td>{{ ((resultados.masa_concentrados + resultados.T) / resultados.F * 100) | num(2) }}</td>
+                <td>{{ resultados.f_calculada | num_auto }}</td>
+                <td>{{ resultados.metal_salida | num(2) }}</td>
+                <td>{{ ((resultados.metal_salida) / resultados.metal_alimentacion * 100) | num(2) }}</td>
+                <td>—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <p class="mf-esquema-nota mt-2">
+          La fila de totales muestra la ley de cabeza calculada: es la ley que resulta de recombinar
+          todos los productos.
+        </p>
+      </div>
+    </div>
+
+    <div class="mf-grid mf-grid-2 mb-3">
+      {% if graficos.sankey %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-diagram-3"></i> Reparto del metal</h3></div>
+        <div class="mf-card__body"><div class="mf-grafico" data-figura='{{ graficos.sankey | tojson }}'></div></div>
+      </div>
+      {% endif %}
+      {% if graficos.recuperacion %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-bar-chart"></i> Distribución por producto</h3></div>
+        <div class="mf-card__body"><div class="mf-grafico" data-figura='{{ graficos.recuperacion | tojson }}'></div></div>
+      </div>
+      {% endif %}
+      {% if graficos.leyes %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-graph-up"></i> Leyes comparadas</h3></div>
+        <div class="mf-card__body"><div class="mf-grafico" data-figura='{{ graficos.leyes | tojson }}'></div></div>
+      </div>
+      {% endif %}
+      {% if graficos.ley_recuperacion %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-activity"></i> Curva ley-recuperación</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.ley_recuperacion | tojson }}'></div>
+          <p class="mf-esquema-nota">
+            Compromiso fundamental de la concentración: exigir mayor ley de concentrado reduce
+            la recuperación alcanzable con la misma cabeza y el mismo relave.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mf-card">
+      <div class="mf-card__head"><h3><i class="bi bi-123"></i> Desarrollo del cálculo</h3></div>
+      <div class="mf-card__body">
+        {% for paso in resultados.pasos %}
+        <div class="mf-paso">
+          <span class="mf-paso__n">{{ loop.index }}</span>
+          <span class="mf-paso__txt">{{ paso }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-graph-up-arrow"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Ingresa las leyes de los productos y las masas que conozcas. Usa
+             <strong>Cargar ejemplo</strong> para un caso resuelto con la fórmula de dos productos, o
+             <strong>Ejemplo con control de cabeza</strong> para ver la conciliación entre la ley
+             ensayada y la calculada.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const tipo = document.getElementById('tipo_balance');
+  const unidad = document.getElementById('unidad_ley');
+  const N = { '1_concentrado': 1, '2_concentrados': 2, '3_concentrados': 3 };
+  const poner = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+
+  function aplicar() {
+    const n = N[tipo.value] || 1;
+    document.querySelectorAll('[data-conc]').forEach((fs) => {
+      const i = parseInt(fs.getAttribute('data-conc'), 10);
+      fs.hidden = i > n;
+      fs.querySelectorAll('input').forEach((inp) => { inp.disabled = i > n; });
+    });
+    document.querySelectorAll('[data-esquema-n]').forEach((e) => {
+      e.hidden = parseInt(e.getAttribute('data-esquema-n'), 10) !== n;
+    });
+  }
+
+  function aplicarUnidad() {
+    document.querySelectorAll('[data-unidad]').forEach((s) => { s.textContent = unidad.value; });
+  }
+
+  tipo.addEventListener('change', aplicar);
+  unidad.addEventListener('change', aplicarUnidad);
+  aplicar();
+  aplicarUnidad();
+
+  document.getElementById('mf-ejemplo-met').addEventListener('click', function () {
+    const n = N[tipo.value] || 1;
+    if (n === 1) {
+      poner('f_masa', 1000); poner('f_ley', 1.2);
+      poner('c1_masa', ''); poner('c1_ley', 28);
+      poner('t_masa', ''); poner('t_ley', 0.08);
+      MF.aviso('Ejemplo de un concentrado: las masas se resolverán con la fórmula de dos productos.', 'info', 5000);
+    } else if (n === 2) {
+      poner('f_masa', 1000); poner('f_ley', 2.4);
+      poner('c1_masa', 42); poner('c1_ley', 26);
+      poner('c2_masa', 25); poner('c2_ley', 45);
+      poner('t_masa', ''); poner('t_ley', '');
+      MF.aviso('Ejemplo de dos concentrados: se deducirán la masa y la ley del relave.', 'info', 5000);
+    } else {
+      poner('f_masa', 1000); poner('f_ley', 3.1);
+      poner('c1_masa', 38); poner('c1_ley', 24);
+      poner('c2_masa', 30); poner('c2_ley', 48);
+      poner('c3_masa', 15); poner('c3_ley', 40);
+      poner('t_masa', ''); poner('t_ley', '');
+      MF.aviso('Ejemplo de tres concentrados cargado.', 'info', 5000);
+    }
+  });
+
+  // Todas las corrientes medidas: la ley de cabeza calculada se vuelve
+  // una verificación independiente del ensayo de cabeza.
+  document.getElementById('mf-ejemplo-cabeza').addEventListener('click', function () {
+    tipo.value = '1_concentrado';
+    unidad.value = '%';
+    aplicar(); aplicarUnidad();
+    poner('f_masa', 1000); poner('f_ley', 1.15);
+    poner('c1_masa', 40.5); poner('c1_ley', 27.8);
+    poner('t_masa', 959.5); poner('t_ley', 0.082);
+    MF.aviso('Ejemplo con masas y leyes de todos los productos: se contrastará la cabeza ensayada con la calculada.', 'info', 6000);
+  });
+})();
+</script>
+{% endblock %}

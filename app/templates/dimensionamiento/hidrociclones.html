@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_hidrociclon %}
+
+{% block titulo %}Hidrociclones · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Hidrociclones{% endblock %}
+{% block ruta %}Módulo IV · Dimensionamiento de equipos{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-rulers"></i> Módulo IV · Dimensionamiento</div>
+    <h1>Hidrociclones clasificadores</h1>
+    <p>Determina el diámetro de ciclón necesario para alcanzar un tamaño de corte objetivo mediante
+       la correlación de <strong>Plitt (1976)</strong>, con las proporciones geométricas estándar de
+       la familia Krebs, y verifica la velocidad de entrada y el número de unidades en paralelo.</p>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">{{ esq_hidrociclon() }}</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head"><h2><i class="bi bi-sliders"></i> Condiciones de operación</h2></div>
+
+  <form method="POST" data-ajax="#mf-resultados" data-validar data-cargando>
+    <div class="mf-card__body">
+      <fieldset class="mf-fieldset">
+        <legend>Pulpa a clasificar</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="caudal"><span class="mf-sim">Q</span> · Caudal total de pulpa</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="caudal" name="caudal"
+                     step="0.1" min="0.1" placeholder="450" required value="{{ entradas.get('caudal', '') }}">
+              <span class="input-group-text">m³/h</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="tamano_corte"><span class="mf-sim">d₅₀c</span> · Tamaño de corte objetivo</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="tamano_corte" name="tamano_corte"
+                     step="1" min="1" max="2000" placeholder="150" required value="{{ entradas.get('tamano_corte', '') }}">
+              <span class="input-group-text">µm</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="concentracion_volumen"><span class="mf-sim">Cv</span> · Sólidos en volumen</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="concentracion_volumen"
+                     name="concentracion_volumen" step="0.1" min="0.1" max="55"
+                     value="{{ entradas.get('concentracion_volumen', '20') }}">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="densidad_solido"><span class="mf-sim">ρs</span> · Densidad del sólido</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="densidad_solido" name="densidad_solido"
+                     step="0.01" min="1" max="12" placeholder="2.7" required value="{{ entradas.get('densidad_solido', '') }}">
+              <span class="input-group-text">g/cm³</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="densidad_liquido"><span class="mf-sim">ρl</span> · Densidad del líquido</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="densidad_liquido" name="densidad_liquido"
+                     step="0.01" min="0.5" max="3" value="{{ entradas.get('densidad_liquido', '1.0') }}">
+              <span class="input-group-text">g/cm³</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="caudal_unitario">Caudal por ciclón <span class="mf-faint">(opcional)</span></label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="caudal_unitario" name="caudal_unitario"
+                     step="0.1" min="0" placeholder="todo en una unidad" value="{{ entradas.get('caudal_unitario', '') }}">
+              <span class="input-group-text">m³/h</span>
+            </div>
+            <div class="form-text">Fíjalo para dimensionar una batería en paralelo.</div>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="mf-alerta mf-alerta-info">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>Se asumen las proporciones estándar <span class="mono">Di = 0,15·Dc · Do = 0,25·Dc ·
+             Du = 0,15·Dc · h = 4·Dc</span>. El diámetro Dc se resuelve numéricamente para alcanzar
+             el corte pedido.</div>
+      </div>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 mf-no-print">
+      <button type="submit" class="btn btn-mf"><i class="bi bi-calculator"></i> Dimensionar hidrociclón</button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-ciclon"><i class="bi bi-magic"></i> Cargar ejemplo</button>
+    </div>
+  </form>
+</div>
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">{{ resultados.n_ciclones }} × ciclón de {{ resultados.diametro_pulg | num(1) }} pulgadas</h1>
+      </div>
+      <span class="mf-badge mf-badge-primary">
+        <i class="bi bi-wind"></i> v entrada = {{ resultados.velocidad_entrada | num(1) }} m/s
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-circle"></i> Diámetro del ciclón</div>
+        <div class="mf-kpi__valor">{{ resultados.diametro_cm | num(1) }}<span class="mf-kpi__unidad">cm</span></div>
+        <div class="mf-kpi__nota">{{ resultados.diametro_pulg | num(2) }} pulgadas</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-collection"></i> Unidades en paralelo</div>
+        <div class="mf-kpi__valor">{{ resultados.n_ciclones }}</div>
+        <div class="mf-kpi__nota">{{ resultados.caudal_unitario | num(1) }} m³/h por ciclón</div>
+      </div>
+      <div class="mf-kpi mf-c-info">
+        <div class="mf-kpi__label"><i class="bi bi-droplet"></i> Densidad de pulpa</div>
+        <div class="mf-kpi__valor">{{ resultados.densidad_pulpa | num(0) }}<span class="mf-kpi__unidad">kg/m³</span></div>
+        <div class="mf-kpi__nota">Cv = {{ resultados.cv | num(1) }} %</div>
+      </div>
+      <div class="mf-kpi mf-c-success">
+        <div class="mf-kpi__label"><i class="bi bi-wind"></i> Velocidad de entrada</div>
+        <div class="mf-kpi__valor">{{ resultados.velocidad_entrada | num(2) }}<span class="mf-kpi__unidad">m/s</span></div>
+        <div class="mf-kpi__nota">Rango usual 5–20 m/s</div>
+      </div>
+      <div class="mf-kpi mf-c-warning">
+        <div class="mf-kpi__label"><i class="bi bi-scissors"></i> Corte de diseño</div>
+        <div class="mf-kpi__valor">{{ resultados.d50c | num(0) }}<span class="mf-kpi__unidad">µm</span></div>
+        <div class="mf-kpi__nota">Δρ = {{ resultados.delta_rho | num(2) }} g/cm³</div>
+      </div>
+    </div>
+
+    {% for nota in notas %}
+    <div class="mf-alerta mf-alerta-{{ nota.color }} mb-2">
+      <i class="bi bi-{{ 'check-circle-fill' if nota.color == 'success' else 'exclamation-triangle-fill' if nota.color in ['warning','danger'] else 'info-circle-fill' }}"></i>
+      <div>{{ nota.texto }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="mf-grid mf-grid-2 mt-3 mb-3">
+      {% if graficos.corte %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-graph-up"></i> Corte según el diámetro</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.corte | tojson }}'></div>
+          <p class="mf-esquema-nota">Ciclones más grandes cortan más grueso; para cortes finos hay
+             que ir a muchas unidades pequeñas en paralelo.</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if graficos.geometria %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-bar-chart"></i> Dimensiones resultantes</h3></div>
+        <div class="mf-card__body"><div class="mf-grafico" data-figura='{{ graficos.geometria | tojson }}'></div></div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mf-grid mf-grid-2">
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-123"></i> Desarrollo del cálculo</h3></div>
+        <div class="mf-card__body">
+          {% for paso in resultados.pasos %}
+          <div class="mf-paso"><span class="mf-paso__n">{{ loop.index }}</span><span class="mf-paso__txt">{{ paso }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mf-card">
+        <div class="mf-card__head">
+          <h3><i class="bi bi-table"></i> Hoja de dimensiones</h3>
+          <div class="mf-acciones mf-no-print">
+            <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-ciclon" data-nombre="hidrociclon">
+              <i class="bi bi-filetype-csv"></i> CSV
+            </button>
+          </div>
+        </div>
+        <div class="mf-card__body">
+          <div class="mf-tabla-wrap">
+            <table class="mf-tabla" id="mf-tabla-ciclon">
+              <thead><tr><th class="mf-col-txt">Elemento</th><th>Valor (cm)</th><th>Proporción</th></tr></thead>
+              <tbody>
+                <tr><td class="mf-col-txt">Dc · diámetro del cuerpo</td><td>{{ resultados.diametro_cm | num(2) }}</td><td>1,00 · Dc</td></tr>
+                <tr><td class="mf-col-txt">Di · entrada tangencial</td><td>{{ resultados.geometria.Di | num(2) }}</td><td>0,15 · Dc</td></tr>
+                <tr><td class="mf-col-txt">Do · vórtex (overflow)</td><td>{{ resultados.geometria.Do | num(2) }}</td><td>0,25 · Dc</td></tr>
+                <tr><td class="mf-col-txt">Du · ápex (underflow)</td><td>{{ resultados.geometria.Du | num(2) }}</td><td>0,15 · Dc</td></tr>
+                <tr><td class="mf-col-txt">h · altura total</td><td>{{ resultados.geometria.h | num(2) }}</td><td>4,00 · Dc</td></tr>
+              </tbody>
+              <tfoot>
+                <tr><td>Velocidad de sedimentación del corte (Stokes)</td>
+                    <td>{{ (resultados.vt_stokes * 1000) | num(4) }}</td><td>mm/s</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="mf-alerta mf-alerta-warning mt-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>La correlación de Plitt es empírica y fue calibrada en un rango acotado de
+                 condiciones. Contrasta el resultado con las curvas del fabricante antes de comprar.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-filter-circle"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Ingresa el caudal de pulpa, el corte objetivo y las densidades.
+             Pulsa <strong>Cargar ejemplo</strong> para probar el módulo.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('mf-ejemplo-ciclon').addEventListener('click', function () {
+  const ej = { caudal: 450, tamano_corte: 150, concentracion_volumen: 22,
+               densidad_solido: 2.75, densidad_liquido: 1.0, caudal_unitario: 90 };
+  Object.keys(ej).forEach(function (k) { const e = document.getElementById(k); if (e) e.value = ej[k]; });
+  MF.aviso('Ejemplo cargado: batería de ciclones para molienda primaria.', 'info', 4000);
+});
+</script>
+{% endblock %}

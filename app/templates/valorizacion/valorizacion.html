@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_valorizacion %}
+
+{% block titulo %}Valorización de concentrados · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Valorización de concentrados{% endblock %}
+{% block ruta %}Módulo V · Liquidación comercial y NSR{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-cash-coin"></i> Módulo V</div>
+    <h1>Valorización de concentrados</h1>
+    <p>Reproduce la estructura de una liquidación comercial: metal pagable, maquila (TC),
+       cargos de refinación (RC), penalidades y flete, hasta obtener el
+       <strong>retorno neto de fundición (NSR)</strong> del lote y por tonelada seca.</p>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">{{ esq_valorizacion() }}</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head"><h2><i class="bi bi-sliders"></i> Datos del lote y términos comerciales</h2></div>
+
+  <form method="POST" data-ajax="#mf-resultados" data-validar data-cargando>
+    <div class="mf-card__body">
+
+      <fieldset class="mf-fieldset">
+        <legend>Lote de concentrado</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="tonelaje"><span class="mf-sim">Q</span> · Tonelaje húmedo</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="tonelaje" name="tonelaje"
+                     step="0.01" min="0.01" placeholder="500" required value="{{ entradas.get('tonelaje', '') }}">
+              <span class="input-group-text">wmt</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="humedad">Humedad</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="humedad" name="humedad"
+                     step="0.1" min="0" max="50" value="{{ entradas.get('humedad', '8') }}">
+              <span class="input-group-text">%</span>
+            </div>
+            <div class="form-text">La liquidación se hace sobre tonelaje seco (dmt).</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="metal">Metal base del concentrado</label>
+            <select class="form-select" id="metal" name="metal">
+              {% for simbolo, m in metales.items() %}
+              <option value="{{ simbolo }}" {{ 'selected' if entradas.get('metal') == simbolo }}>
+                {{ m.nombre }} ({{ simbolo }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="mf-fieldset">
+        <legend>Metal base <span id="mf-nombre-metal" class="mf-faint">— cobre</span></legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="ley_base">Ley del concentrado</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="ley_base" name="ley_base"
+                     step="0.01" min="0" max="100" placeholder="28" value="{{ entradas.get('ley_base', '') }}">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="pagable_base">Porcentaje pagable</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="pagable_base" name="pagable_base"
+                     step="0.1" min="0" max="100" value="{{ entradas.get('pagable_base', '96.5') }}">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="deduccion_base">Deducción mínima</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="deduccion_base" name="deduccion_base"
+                     step="0.1" min="0" max="50" value="{{ entradas.get('deduccion_base', '1.0') }}">
+              <span class="input-group-text">unid.</span>
+            </div>
+            <div class="form-text">Se aplica la regla más desfavorable de las dos.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="precio_base">Precio del metal</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="precio_base" name="precio_base"
+                     step="0.01" min="0" value="{{ entradas.get('precio_base', '8500') }}">
+              <span class="input-group-text">/t</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="rc_base">Refinación (RC)</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="rc_base" name="rc_base"
+                     step="0.001" min="0" value="{{ entradas.get('rc_base', '0.085') }}">
+              <span class="input-group-text">/lb</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="mf-fieldset">
+        <legend>Créditos por metales preciosos <span class="mf-faint">— deja la ley en 0 si no aplica</span></legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-2">
+            <label class="form-label" for="ley_au"><span class="mf-sim">Au</span> · Ley</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="ley_au" name="ley_au"
+                     step="0.01" min="0" placeholder="0" value="{{ entradas.get('ley_au', '') }}">
+              <span class="input-group-text">g/t</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-2">
+            <label class="form-label" for="pagable_au">Au pagable</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="pagable_au" name="pagable_au"
+                     step="0.1" min="0" max="100" value="{{ entradas.get('pagable_au', '90') }}">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-2">
+            <label class="form-label" for="deduccion_au">Au deducción</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="deduccion_au" name="deduccion_au"
+                     step="0.1" min="0" value="{{ entradas.get('deduccion_au', '1.0') }}">
+              <span class="input-group-text">g/t</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="precio_au">Precio del oro</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="precio_au" name="precio_au"
+                     step="0.01" min="0" value="{{ entradas.get('precio_au', '2300') }}">
+              <span class="input-group-text">/oz</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="rc_au">Refinación del oro</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="rc_au" name="rc_au"
+                     step="0.01" min="0" value="{{ entradas.get('rc_au', '6') }}">
+              <span class="input-group-text">/oz</span>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-2">
+            <label class="form-label" for="ley_ag"><span class="mf-sim">Ag</span> · Ley</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="ley_ag" name="ley_ag"
+                     step="0.1" min="0" placeholder="0" value="{{ entradas.get('ley_ag', '') }}">
+              <span class="input-group-text">g/t</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-2">
+            <label class="form-label" for="pagable_ag">Ag pagable</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="pagable_ag" name="pagable_ag"
+                     step="0.1" min="0" max="100" value="{{ entradas.get('pagable_ag', '90') }}">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-2">
+            <label class="form-label" for="deduccion_ag">Ag deducción</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="deduccion_ag" name="deduccion_ag"
+                     step="1" min="0" value="{{ entradas.get('deduccion_ag', '30') }}">
+              <span class="input-group-text">g/t</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="precio_ag">Precio de la plata</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="precio_ag" name="precio_ag"
+                     step="0.01" min="0" value="{{ entradas.get('precio_ag', '28') }}">
+              <span class="input-group-text">/oz</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="rc_ag">Refinación de la plata</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="rc_ag" name="rc_ag"
+                     step="0.01" min="0" value="{{ entradas.get('rc_ag', '0.5') }}">
+              <span class="input-group-text">/oz</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="mf-fieldset">
+        <legend>Cargos por tonelada seca</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="tc">Maquila · TC</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="tc" name="tc"
+                     step="0.01" min="0" value="{{ entradas.get('tc', '80') }}">
+              <span class="input-group-text">/dmt</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="penalidades">Penalidades por impurezas</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="penalidades" name="penalidades"
+                     step="0.01" min="0" placeholder="0" value="{{ entradas.get('penalidades', '') }}">
+              <span class="input-group-text">/dmt</span>
+            </div>
+            <div class="form-text">As, Sb, Bi, Hg, F, Cl por encima del límite.</div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="flete">Flete y comercialización</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control text-end" id="flete" name="flete"
+                     step="0.01" min="0" placeholder="0" value="{{ entradas.get('flete', '') }}">
+              <span class="input-group-text">/dmt</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 mf-no-print">
+      <button type="submit" class="btn btn-mf"><i class="bi bi-calculator"></i> Calcular liquidación</button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-val"><i class="bi bi-magic"></i> Cargar ejemplo</button>
+    </div>
+  </form>
+</div>
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-receipt"></i> Liquidación</div>
+        <h1 class="h4 mb-0">Concentrado de {{ resultados.metal_nombre | lower }} · {{ resultados.q_seco | num(2) }} dmt</h1>
+      </div>
+      <span class="mf-badge mf-badge-{{ 'success' if resultados.nsr > 0 else 'danger' }}">
+        <i class="bi bi-cash"></i> NSR {{ resultados.nsr | usd(0) }}
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-success">
+        <div class="mf-kpi__label"><i class="bi bi-graph-up"></i> Valor bruto</div>
+        <div class="mf-kpi__valor">{{ resultados.valor_bruto | usd(0) }}</div>
+        <div class="mf-kpi__nota">{{ resultados.valor_bruto_por_dmt | usd(2) }} por dmt</div>
+      </div>
+      <div class="mf-kpi mf-c-danger">
+        <div class="mf-kpi__label"><i class="bi bi-dash-circle"></i> Deducciones</div>
+        <div class="mf-kpi__valor">{{ resultados.total_deducciones | usd(0) }}</div>
+        <div class="mf-kpi__nota">{{ resultados.participacion_deducciones | num(1) }} % del valor bruto</div>
+      </div>
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-cash-stack"></i> Retorno neto (NSR)</div>
+        <div class="mf-kpi__valor">{{ resultados.nsr | usd(0) }}</div>
+        <div class="mf-kpi__nota">Del lote completo</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-box"></i> NSR unitario</div>
+        <div class="mf-kpi__valor">{{ resultados.nsr_por_dmt | usd(2) }}</div>
+        <div class="mf-kpi__nota">Por tonelada seca</div>
+      </div>
+      <div class="mf-kpi mf-c-info">
+        <div class="mf-kpi__label"><i class="bi bi-droplet"></i> Tonelaje seco</div>
+        <div class="mf-kpi__valor">{{ resultados.q_seco | num(2) }}<span class="mf-kpi__unidad">dmt</span></div>
+        <div class="mf-kpi__nota">{{ resultados.q_humedo | num(2) }} wmt con {{ resultados.humedad | num(1) }} % de humedad</div>
+      </div>
+    </div>
+
+    {% for nota in notas %}
+    <div class="mf-alerta mf-alerta-{{ nota.color }} mb-2">
+      <i class="bi bi-{{ 'check-circle-fill' if nota.color == 'success' else 'exclamation-triangle-fill' if nota.color in ['warning','danger'] else 'info-circle-fill' }}"></i>
+      <div>{{ nota.texto }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="mf-card mt-3 mb-3">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-receipt"></i> Hoja de liquidación</h3>
+        <div class="mf-acciones mf-no-print">
+          <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-val" data-nombre="liquidacion">
+            <i class="bi bi-filetype-csv"></i> Exportar CSV
+          </button>
+          <button class="btn btn-sm btn-mf-suave" data-imprimir><i class="bi bi-printer"></i> Imprimir</button>
+        </div>
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-tabla-wrap">
+          <table class="mf-tabla" id="mf-tabla-val">
+            <thead>
+              <tr>
+                <th class="mf-col-txt">Concepto</th>
+                <th>Ley</th><th>Ley pagable</th><th>Contenido</th><th>Pagable</th>
+                <th>Precio</th><th>Importe (USD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for l in resultados.lineas %}
+              <tr>
+                <td class="mf-col-txt"><strong>{{ l.metal }} ({{ l.simbolo }})</strong></td>
+                <td>{{ l.ley | num_auto }} {{ l.unidad_ley }}</td>
+                <td>{{ l.ley_pagable | num_auto }} {{ l.unidad_ley }}</td>
+                <td>{{ l.contenido | num(3) }} {{ l.unidad_contenido }}</td>
+                <td>{{ l.pagable | num(3) }} {{ l.unidad_contenido }}</td>
+                <td>{{ l.precio | usd(2) }}</td>
+                <td>{{ l.valor | usd(2) }}</td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td class="mf-col-txt"><strong>Valor bruto del concentrado</strong></td>
+                <td colspan="5"></td>
+                <td><strong>{{ resultados.valor_bruto | usd(2) }}</strong></td>
+              </tr>
+              {% for d in resultados.deducciones %}
+              <tr>
+                <td class="mf-col-txt">− {{ d.concepto }}</td>
+                <td colspan="5" class="mf-col-txt mf-faint">{{ d.detalle }}</td>
+                <td>−{{ d.monto | usd(2) }}</td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td class="mf-col-txt"><strong>Total de deducciones</strong></td>
+                <td colspan="5"></td>
+                <td><strong>−{{ resultados.total_deducciones | usd(2) }}</strong></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>NSR · Retorno neto de fundición</td>
+                <td colspan="4"></td>
+                <td>{{ resultados.nsr_por_dmt | usd(2) }} /dmt</td>
+                <td>{{ resultados.nsr | usd(2) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="mf-grid mf-grid-2 mb-3">
+      {% if graficos.cascada %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-bar-chart-steps"></i> Cascada de valor</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.cascada | tojson }}'></div>
+        </div>
+      </div>
+      {% endif %}
+      {% if graficos.aporte %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-pie-chart"></i> Aporte por metal</h3></div>
+        <div class="mf-card__body"><div class="mf-grafico" data-figura='{{ graficos.aporte | tojson }}'></div></div>
+      </div>
+      {% endif %}
+      {% if graficos.sensibilidad %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-activity"></i> Sensibilidad al precio</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.sensibilidad | tojson }}'></div>
+          <p class="mf-esquema-nota">Muestra a qué precio del metal el lote deja de ser rentable
+             (cruce con el eje horizontal).</p>
+        </div>
+      </div>
+      {% endif %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-123"></i> Desarrollo del cálculo</h3></div>
+        <div class="mf-card__body">
+          {% for paso in resultados.pasos %}
+          <div class="mf-paso"><span class="mf-paso__n">{{ loop.index }}</span><span class="mf-paso__txt">{{ paso }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mf-alerta mf-alerta-warning">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>Los términos comerciales (TC, RC, deducciones y penalidades) se negocian caso a caso
+           con cada fundición. Los valores precargados son referencias de mercado y deben
+           reemplazarse por los del contrato real antes de tomar decisiones comerciales.</div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-cash-coin"></i>
+          <h3>Aún no hay liquidación</h3>
+          <p>Ingresa el tonelaje, la humedad y las leyes del concentrado.
+             Pulsa <strong>Cargar ejemplo</strong> para valorizar un concentrado de cobre
+             con créditos de oro y plata.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const METALES = {{ metales | tojson }};
+  const select = document.getElementById('metal');
+  const etiqueta = document.getElementById('mf-nombre-metal');
+
+  function aplicarMetal(sobrescribir) {
+    const m = METALES[select.value];
+    if (!m) return;
+    etiqueta.textContent = '— ' + m.nombre.toLowerCase();
+    if (!sobrescribir) return;
+    const poner = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    poner('pagable_base', m.pagable);
+    poner('deduccion_base', m.deduccion);
+    poner('precio_base', m.precio);
+    poner('rc_base', m.rc);
+    poner('tc', m.tc);
+    MF.aviso('Términos de referencia de ' + m.nombre.toLowerCase() + ' cargados. Ajústalos a tu contrato.', 'info', 4000);
+  }
+
+  select.addEventListener('change', function () { aplicarMetal(true); });
+  aplicarMetal(false);
+
+  document.getElementById('mf-ejemplo-val').addEventListener('click', function () {
+    select.value = 'Cu';
+    aplicarMetal(true);
+    const ej = { tonelaje: 500, humedad: 8, ley_base: 28,
+                 ley_au: 3.5, pagable_au: 90, deduccion_au: 1, precio_au: 2300, rc_au: 6,
+                 ley_ag: 120, pagable_ag: 90, deduccion_ag: 30, precio_ag: 28, rc_ag: 0.5,
+                 tc: 80, penalidades: 12, flete: 45 };
+    Object.keys(ej).forEach(function (k) { const e = document.getElementById(k); if (e) e.value = ej[k]; });
+    MF.aviso('Ejemplo cargado: concentrado de cobre con créditos de oro y plata.', 'info', 5000);
+  });
+})();
+</script>
+{% endblock %}

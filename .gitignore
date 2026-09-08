@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+Scripts/
+Lib/
+Include/
+pyvenv.cfg
+
+# Configuración local con secretos
+.env
+.env.*
+!.env.ejemplo
+
+# Herramientas
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Archivos temporales de la aplicación
+app/static/_*.html
+app/static/_*.png

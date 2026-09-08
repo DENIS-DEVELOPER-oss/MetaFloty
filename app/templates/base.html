@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es" data-tema="claro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="MetaFlotPy — plataforma de cálculo para procesamiento de minerales: granulometría, balances, dimensionamiento y valorización.">
+    <title>{% block titulo %}MetaFlotPy · Cálculos Metalúrgicos{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/metaflotpy.css') }}?v={{ version }}" rel="stylesheet">
+
+    <script>
+      /* Aplica el tema antes de pintar para evitar destello blanco */
+      (function () {
+        try {
+          var t = localStorage.getItem('mf.tema');
+          if (t) document.documentElement.setAttribute('data-tema', t);
+          if (localStorage.getItem('mf.sidebar') === 'mini' && window.innerWidth > 991) {
+            document.addEventListener('DOMContentLoaded', function () {
+              document.body.classList.add('mf-sidebar-mini');
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<!-- Definiciones SVG compartidas por los esquemas de referencia -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="mf-punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" style="fill:var(--mf-text-muted)"/>
+    </marker>
+    <marker id="mf-punta-act" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(--mf-primary)"/>
+    </marker>
+    <marker id="mf-punta-ac2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(--mf-accent)"/>
+    </marker>
+  </defs>
+</svg>
+
+<!-- ============ Sidebar ============ -->
+<nav class="mf-sidebar" id="mf-sidebar" aria-label="Navegación principal">
+    <a class="mf-sidebar__marca" href="{{ url_for('principal.inicio') }}">
+        <span class="mf-logo"><i class="bi bi-hexagon-fill"></i></span>
+        <span class="mf-sidebar__marca-txt">
+            <b>MetaFlotPy</b>
+            <span>Procesamiento mineral</span>
+        </span>
+    </a>
+
+    <button class="mf-sidebar__cerrar" id="mf-cerrar-menu" type="button" aria-label="Cerrar menú">
+        <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="mf-sidebar__nav">
+        <div class="mf-nav-grupo">General</div>
+        <a class="mf-nav-link" href="{{ url_for('principal.inicio') }}">
+            <i class="bi bi-grid-1x2"></i><span>Panel de inicio</span>
+        </a>
+        <a class="mf-nav-link" href="{{ url_for('principal.introduccion') }}">
+            <i class="bi bi-book"></i><span>Guía de uso</span>
+        </a>
+
+        <div class="mf-nav-grupo">Módulos de cálculo</div>
+
+        <a class="mf-nav-link" data-bs-toggle="collapse" href="#sub-tamizado" role="button"
+           aria-expanded="false" aria-controls="sub-tamizado">
+            <i class="bi bi-funnel"></i><span>I · Granulometría</span><i class="bi bi-chevron-right mf-chevron"></i>
+        </a>
+        <ul class="collapse mf-subnav" id="sub-tamizado">
+            <li><a class="mf-nav-link" href="{{ url_for('tamizado.index') }}"><i class="bi bi-dot"></i><span>Resumen del módulo</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('tamizado.analisis_granulometrico') }}"><i class="bi bi-dot"></i><span>Gates-Gaudin-Schuhmann</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('tamizado.rosin_rammler') }}"><i class="bi bi-dot"></i><span>Rosin-Rammler</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('tamizado.regresion_lineal') }}"><i class="bi bi-dot"></i><span>Regresión empírica</span></a></li>
+        </ul>
+
+        <a class="mf-nav-link" href="{{ url_for('balance_masa.balance_masa') }}">
+            <i class="bi bi-diagram-3"></i><span>II · Balance de masa</span>
+        </a>
+        <a class="mf-nav-link" href="{{ url_for('balance_metalurgico.balance_metalurgico') }}">
+            <i class="bi bi-graph-up-arrow"></i><span>III · Balance metalúrgico</span>
+        </a>
+
+        <a class="mf-nav-link" data-bs-toggle="collapse" href="#sub-dimensionamiento" role="button"
+           aria-expanded="false" aria-controls="sub-dimensionamiento">
+            <i class="bi bi-rulers"></i><span>IV · Dimensionamiento</span><i class="bi bi-chevron-right mf-chevron"></i>
+        </a>
+        <ul class="collapse mf-subnav" id="sub-dimensionamiento">
+            <li><a class="mf-nav-link" href="{{ url_for('dimensionamiento.dimensionamiento') }}"><i class="bi bi-dot"></i><span>Resumen del módulo</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('dimensionamiento.molino_barras') }}"><i class="bi bi-dot"></i><span>Molino de barras</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('dimensionamiento.molino_bolas') }}"><i class="bi bi-dot"></i><span>Molino de bolas</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('dimensionamiento.hidrociclones') }}"><i class="bi bi-dot"></i><span>Hidrociclones</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('dimensionamiento.separadores') }}"><i class="bi bi-dot"></i><span>Separadores gravimétricos</span></a></li>
+            <li><a class="mf-nav-link" href="{{ url_for('dimensionamiento.almacenamiento') }}"><i class="bi bi-dot"></i><span>Silos y tolvas</span></a></li>
+        </ul>
+
+        <a class="mf-nav-link" href="{{ url_for('valorizacion.valorizacion') }}">
+            <i class="bi bi-cash-coin"></i><span>V · Valorización</span>
+        </a>
+
+        <div class="mf-nav-grupo">Herramientas</div>
+        <a class="mf-nav-link" href="{{ url_for('utilitarios.utilitarios') }}">
+            <i class="bi bi-tools"></i><span>Utilitarios</span>
+        </a>
+        <a class="mf-nav-link" href="{{ url_for('utilitarios.conversores') }}">
+            <i class="bi bi-arrow-left-right"></i><span>Conversores</span>
+        </a>
+    </div>
+
+    <div class="mf-sidebar__pie">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check"></i>
+            <span>v{{ version }} · {{ anio }}</span>
+        </div>
+    </div>
+</nav>
+
+<div class="mf-backdrop" id="mf-backdrop"></div>
+
+<!-- ============ Contenido ============ -->
+<div class="mf-principal">
+
+    <header class="mf-topbar">
+        <button class="mf-icon-btn" id="mf-btn-sidebar" type="button"
+                title="Mostrar u ocultar el menú (Ctrl+B)" aria-label="Alternar menú lateral">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <div class="mf-topbar__info">
+            <p class="mf-topbar__titulo">{% block titulo_pagina %}MetaFlotPy{% endblock %}</p>
+            <p class="mf-topbar__ruta">{% block ruta %}Plataforma de cálculo metalúrgico{% endblock %}</p>
+        </div>
+
+        <div class="ms-auto d-flex align-items-center gap-2">
+            {% block acciones_topbar %}{% endblock %}
+            <button class="mf-icon-btn" id="mf-btn-imprimir" type="button" title="Imprimir o guardar en PDF">
+                <i class="bi bi-printer"></i>
+            </button>
+            <button class="mf-icon-btn" id="mf-btn-tema" type="button" title="Cambiar tema">
+                <i class="bi bi-moon-stars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="mf-contenido">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div class="mb-3 d-grid gap-2">
+                {% for categoria, mensaje in mensajes %}
+                    {% set clase = {'error':'danger','message':'info'}.get(categoria, categoria) %}
+                    <div class="mf-alerta mf-alerta-{{ clase }}">
+                        <i class="bi bi-info-circle-fill"></i><div>{{ mensaje }}</div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block contenido %}{% endblock %}
+    </main>
+
+    <footer class="mf-pie">
+        <span><strong>MetaFlotPy</strong> · Cálculos de procesamiento de minerales</span>
+        <span>Los resultados son referenciales y deben validarse con criterio de ingeniería.</span>
+    </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="{{ url_for('static', filename='js/metaflotpy.js') }}?v={{ version }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

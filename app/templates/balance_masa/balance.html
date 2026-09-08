@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_circuito %}
+
+{% block titulo %}Balance de masa · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Balance de masa{% endblock %}
+{% block ruta %}Módulo II · Circuitos de molienda{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-diagram-3"></i> Módulo II</div>
+    <h1>Balance de masa del circuito de molienda</h1>
+    <p>Resuelve la corriente que falta a partir de las ecuaciones de conservación del circuito,
+       calcula la carga circulante y verifica el cierre del balance. Basta con ingresar dos
+       corrientes conocidas: la tercera se deduce.</p>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+{# --- Esquema de referencia: se muestra el del circuito seleccionado --- #}
+<div class="mb-3">
+  {% for clave in ['directo', 'inverso', 'sabc1', 'sabc2'] %}
+    <div data-esquema="{{ clave }}"
+         {% if clave != (formulario.tipo_circuito.data or 'directo') %}hidden{% endif %}>
+      {{ esq_circuito(clave) }}
+    </div>
+  {% endfor %}
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h2><i class="bi bi-sliders"></i> Datos del circuito</h2>
+  </div>
+
+  <form method="POST" id="mf-form-balance" data-ajax="#mf-resultados" data-validar data-cargando>
+    {{ formulario.hidden_tag() }}
+    <div class="mf-card__body">
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6 col-lg-5">
+          <label class="form-label" for="tipo_circuito">Tipo de circuito</label>
+          {{ formulario.tipo_circuito(class="form-select", id="tipo_circuito") }}
+        </div>
+        <div class="col-md-6 col-lg-7 d-flex align-items-end">
+          <div class="mf-alerta mf-alerta-info w-100">
+            <i class="bi bi-diagram-2-fill"></i>
+            <div>
+              <strong id="mf-eq-circuito">{{ definicion.ecuacion }}</strong><br>
+              <span class="mf-faint" id="mf-desc-circuito">{{ definicion.descripcion }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <fieldset class="mf-fieldset">
+        <legend>Corrientes del circuito (t/h)</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-4" data-campo data-circuitos="directo inverso sabc1 sabc2">
+            <label class="form-label" for="f_flujo"><span class="mf-sim">F</span> · Alimentación fresca</label>
+            <div class="input-group">
+              {{ formulario.f_flujo(class="form-control text-end", id="f_flujo") }}
+              <span class="input-group-text">t/h</span>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-4" data-campo data-circuitos="directo inverso sabc1 sabc2">
+            <label class="form-label" for="p_flujo"><span class="mf-sim">P</span> · Producto final</label>
+            <div class="input-group">
+              {{ formulario.p_flujo(class="form-control text-end", id="p_flujo") }}
+              <span class="input-group-text">t/h</span>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-4" data-campo data-circuitos="directo inverso sabc1 sabc2">
+            <label class="form-label" for="r_flujo"><span class="mf-sim">R</span> · Carga circulante</label>
+            <div class="input-group">
+              {{ formulario.r_flujo(class="form-control text-end", id="r_flujo") }}
+              <span class="input-group-text">t/h</span>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-4" data-campo data-circuitos="sabc1 sabc2">
+            <label class="form-label" for="s_flujo"><span class="mf-sim">S</span> · Producto del SAG</label>
+            <div class="input-group">
+              {{ formulario.s_flujo(class="form-control text-end", id="s_flujo") }}
+              <span class="input-group-text">t/h</span>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-4" data-campo data-circuitos="sabc1">
+            <label class="form-label" for="b_flujo"><span class="mf-sim">B</span> · Descarga del molino de bolas</label>
+            <div class="input-group">
+              {{ formulario.b_flujo(class="form-control text-end", id="b_flujo") }}
+              <span class="input-group-text">t/h</span>
+            </div>
+          </div>
+        </div>
+        <p class="form-text mb-0 mt-2">
+          Deja en blanco la corriente que quieres calcular. Los campos que no aplican al circuito
+          seleccionado se ocultan automáticamente.
+        </p>
+      </fieldset>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 align-items-center mf-no-print">
+      <button type="submit" class="btn btn-mf"><i class="bi bi-calculator"></i> Calcular balance</button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-balance">
+        <i class="bi bi-magic"></i> Cargar ejemplo
+      </button>
+      <span class="mf-faint ms-auto">Fórmula de carga circulante: <span id="mf-cc-formula">{{ definicion.cc_formula }}</span></span>
+    </div>
+  </form>
+</div>
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">{{ definicion.nombre }}</h1>
+      </div>
+      <span class="mf-badge mf-badge-{{ 'success' if resultados.balance_ok else 'danger' }}">
+        <i class="bi bi-{{ 'check-circle' if resultados.balance_ok else 'x-octagon' }}"></i>
+        {{ 'Balance cerrado' if resultados.balance_ok else 'Balance no cierra' }}
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      {% for simbolo, nombre, valor, deducido in resultados.corrientes %}
+      <div class="mf-kpi {{ 'mf-c-accent' if deducido else 'mf-c-primary' }}">
+        <div class="mf-kpi__label">
+          <i class="bi bi-{{ 'calculator' if deducido else 'input-cursor' }}"></i> {{ simbolo }} · {{ nombre }}
+        </div>
+        <div class="mf-kpi__valor">{{ valor | num(2) }}<span class="mf-kpi__unidad">t/h</span></div>
+        <div class="mf-kpi__nota">{{ 'Valor deducido del balance' if deducido else 'Dato ingresado' }}</div>
+      </div>
+      {% endfor %}
+
+      {% if resultados.carga_circulante_pct is not none %}
+      <div class="mf-kpi mf-c-warning">
+        <div class="mf-kpi__label"><i class="bi bi-arrow-repeat"></i> Carga circulante</div>
+        <div class="mf-kpi__valor">{{ resultados.carga_circulante_pct | num(1) }}<span class="mf-kpi__unidad">%</span></div>
+        <div class="mf-kpi__nota">{{ definicion.cc_formula }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% for nota in notas %}
+    <div class="mf-alerta mf-alerta-{{ nota.color }} mb-2">
+      <i class="bi bi-{{ 'check-circle-fill' if nota.color == 'success' else 'exclamation-triangle-fill' if nota.color in ['warning','danger'] else 'info-circle-fill' }}"></i>
+      <div>{{ nota.texto }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="mf-grid mf-grid-2 mt-3 mb-3">
+      {% if graficos.sankey %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-diagram-3"></i> Distribución de flujos</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.sankey | tojson }}'></div>
+          <p class="mf-esquema-nota">El ancho de cada cinta es proporcional al flujo másico que transporta.</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if graficos.carga %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-speedometer2"></i> Nivel de recirculación</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.carga | tojson }}'></div>
+          <p class="mf-esquema-nota">
+            Verde: recirculación baja · Ámbar: rango industrial habitual (150–350 %) · Rojo: recirculación excesiva.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if graficos.corrientes %}
+    <div class="mf-card mb-3">
+      <div class="mf-card__head"><h3><i class="bi bi-bar-chart"></i> Comparación de corrientes</h3></div>
+      <div class="mf-card__body">
+        <div class="mf-grafico mf-grafico-sm" data-figura='{{ graficos.corrientes | tojson }}'></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mf-grid mf-grid-2">
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-123"></i> Desarrollo del cálculo</h3></div>
+        <div class="mf-card__body">
+          {% for paso in resultados.pasos %}
+            {% if paso %}
+            <div class="mf-paso">
+              <span class="mf-paso__n">{{ loop.index }}</span>
+              <span class="mf-paso__txt">{{ paso }}</span>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mf-card">
+        <div class="mf-card__head">
+          <h3><i class="bi bi-table"></i> Resumen de corrientes</h3>
+          <div class="mf-acciones mf-no-print">
+            <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-corrientes" data-nombre="balance-masa">
+              <i class="bi bi-filetype-csv"></i> CSV
+            </button>
+          </div>
+        </div>
+        <div class="mf-card__body">
+          <div class="mf-tabla-wrap">
+            <table class="mf-tabla" id="mf-tabla-corrientes">
+              <thead>
+                <tr><th>Símbolo</th><th class="mf-col-txt">Corriente</th><th>Flujo (t/h)</th><th class="mf-col-txt">Origen</th></tr>
+              </thead>
+              <tbody>
+                {% for simbolo, nombre, valor, deducido in resultados.corrientes %}
+                <tr>
+                  <td class="mf-col-txt"><strong>{{ simbolo }}</strong></td>
+                  <td class="mf-col-txt">{{ nombre }}</td>
+                  <td>{{ valor | num(2) }}</td>
+                  <td class="mf-col-txt">
+                    <span class="mf-badge {{ 'mf-badge-warning' if deducido else 'mf-badge-primary' }}">
+                      {{ 'Calculado' if deducido else 'Ingresado' }}
+                    </span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2">Error de cierre</td>
+                  <td>{{ resultados.error_balance | num(3) }}</td>
+                  <td class="mf-col-txt">tolerancia ±0,01 t/h</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-diagram-3"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Elige el tipo de circuito, ingresa al menos dos corrientes conocidas y pulsa
+             <strong>Calcular balance</strong>.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const DEF = {{ definiciones | tojson }};
+  const select = document.getElementById('tipo_circuito');
+  const eq = document.getElementById('mf-eq-circuito');
+  const desc = document.getElementById('mf-desc-circuito');
+  const ccF = document.getElementById('mf-cc-formula');
+
+  const EJEMPLOS = {
+    directo: { f_flujo: 250, p_flujo: 250, r_flujo: '' },
+    inverso: { f_flujo: 250, r_flujo: 375, p_flujo: '' },
+    sabc1:   { f_flujo: 500, r_flujo: 1250, p_flujo: '', s_flujo: '', b_flujo: '' },
+    sabc2:   { f_flujo: 500, r_flujo: 90, p_flujo: '', s_flujo: '' }
+  };
+
+  function aplicar() {
+    const tipo = select.value;
+    const d = DEF[tipo];
+
+    // Campos relevantes para el circuito
+    document.querySelectorAll('[data-campo]').forEach((c) => {
+      const aplica = c.getAttribute('data-circuitos').split(' ').indexOf(tipo) !== -1;
+      c.hidden = !aplica;
+      c.querySelectorAll('input').forEach((i) => { i.disabled = !aplica; });
+    });
+
+    // Esquema de referencia
+    document.querySelectorAll('[data-esquema]').forEach((e) => {
+      e.hidden = e.getAttribute('data-esquema') !== tipo;
+    });
+
+    if (d) {
+      eq.textContent = d.ecuacion;
+      desc.textContent = d.descripcion;
+      ccF.textContent = d.cc_formula;
+    }
+  }
+
+  select.addEventListener('change', aplicar);
+  aplicar();
+
+  document.getElementById('mf-ejemplo-balance').addEventListener('click', function () {
+    const ej = EJEMPLOS[select.value] || {};
+    Object.keys(ej).forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.value = ej[id];
+    });
+    MF.aviso('Ejemplo cargado. Pulsa «Calcular balance» para resolver el circuito.', 'info', 4000);
+  });
+})();
+</script>
+{% endblock %}

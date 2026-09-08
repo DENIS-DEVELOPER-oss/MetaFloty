@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_silo %}
+
+{% block titulo %}Silos y tolvas · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Silos y tolvas{% endblock %}
+{% block ruta %}Módulo IV · Dimensionamiento de equipos{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-rulers"></i> Módulo IV · Dimensionamiento</div>
+    <h1>Silos y tolvas de almacenamiento</h1>
+    <p>Calcula el volumen y la capacidad de un silo cilíndrico con tolva cónica, estima la autonomía
+       operativa frente al tratamiento de la planta y verifica el criterio de flujo másico y la
+       presión de pared según la teoría de <strong>Janssen</strong>.</p>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">{{ esq_silo() }}</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head"><h2><i class="bi bi-sliders"></i> Geometría y material</h2></div>
+
+  <form method="POST" data-ajax="#mf-resultados" data-validar data-cargando>
+    <div class="mf-card__body">
+      <fieldset class="mf-fieldset">
+        <legend>Geometría del recipiente</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="diametro_silo"><span class="mf-sim">D</span> · Diámetro</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="diametro_silo" name="diametro_silo"
+                     step="0.01" min="0.1" max="60" placeholder="8" required value="{{ entradas.get('diametro_silo', '') }}">
+              <span class="input-group-text">m</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="altura_silo"><span class="mf-sim">H</span> · Altura del cilindro</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="altura_silo" name="altura_silo"
+                     step="0.01" min="0.1" max="100" placeholder="12" required value="{{ entradas.get('altura_silo', '') }}">
+              <span class="input-group-text">m</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="angulo_tolva"><span class="mf-sim">θ</span> · Ángulo de la tolva</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="angulo_tolva" name="angulo_tolva"
+                     step="0.5" min="20" max="89" value="{{ entradas.get('angulo_tolva', '60') }}">
+              <span class="input-group-text">°</span>
+            </div>
+            <div class="form-text">Medido desde la horizontal.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="diametro_descarga">Boca de descarga <span class="mf-faint">(opcional)</span></label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="diametro_descarga" name="diametro_descarga"
+                     step="0.01" min="0" max="30" placeholder="auto" value="{{ entradas.get('diametro_descarga', '') }}">
+              <span class="input-group-text">m</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="mf-fieldset">
+        <legend>Material y operación</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="densidad_material"><span class="mf-sim">ρ</span> · Densidad aparente</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="densidad_material" name="densidad_material"
+                     step="0.01" min="0.1" max="8" placeholder="1.8" required value="{{ entradas.get('densidad_material', '') }}">
+              <span class="input-group-text">t/m³</span>
+            </div>
+            <div class="form-text">Mineral chancado: 1,6–2,2 t/m³.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="angulo_reposo">Ángulo de reposo del material</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="angulo_reposo" name="angulo_reposo"
+                     step="0.5" min="5" max="80" value="{{ entradas.get('angulo_reposo', '35') }}">
+              <span class="input-group-text">°</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="tratamiento">Tratamiento de la planta <span class="mf-faint">(opcional)</span></label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="tratamiento" name="tratamiento"
+                     step="0.1" min="0" placeholder="180" value="{{ entradas.get('tratamiento', '') }}">
+              <span class="input-group-text">t/h</span>
+            </div>
+            <div class="form-text">Para calcular la autonomía.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="llenado_util">Fracción de llenado útil</label>
+            <input type="number" class="form-control text-end" id="llenado_util" name="llenado_util"
+                   step="0.01" min="0.3" max="1" value="{{ entradas.get('llenado_util', '0.85') }}">
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 mf-no-print">
+      <button type="submit" class="btn btn-mf"><i class="bi bi-calculator"></i> Calcular capacidad</button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-silo"><i class="bi bi-magic"></i> Cargar ejemplo</button>
+    </div>
+  </form>
+</div>
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">Capacidad de {{ resultados.capacidad | num(0) }} t</h1>
+      </div>
+      <span class="mf-badge mf-badge-{{ 'success' if resultados.flujo_masico else 'warning' }}">
+        <i class="bi bi-arrow-down"></i> {{ 'Flujo másico esperado' if resultados.flujo_masico else 'Riesgo de flujo en embudo' }}
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-box-seam"></i> Capacidad útil</div>
+        <div class="mf-kpi__valor">{{ resultados.capacidad | num(1) }}<span class="mf-kpi__unidad">t</span></div>
+        <div class="mf-kpi__nota">{{ resultados.vol_util | num(1) }} m³ al {{ resultados.llenado_util | num(2) }} de llenado</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-clock-history"></i> Autonomía</div>
+        <div class="mf-kpi__valor">{{ resultados.autonomia | num(1) if resultados.autonomia else '—' }}<span class="mf-kpi__unidad">h</span></div>
+        <div class="mf-kpi__nota">
+          {% if resultados.tratamiento %}A {{ resultados.tratamiento | num(1) }} t/h{% else %}Indica el tratamiento para calcularla{% endif %}
+        </div>
+      </div>
+      <div class="mf-kpi mf-c-info">
+        <div class="mf-kpi__label"><i class="bi bi-bounding-box"></i> Volumen total</div>
+        <div class="mf-kpi__valor">{{ resultados.vol_total | num(1) }}<span class="mf-kpi__unidad">m³</span></div>
+        <div class="mf-kpi__nota">Cilindro {{ resultados.vol_cilindro | num(1) }} + tolva {{ resultados.vol_tolva | num(1) }} m³</div>
+      </div>
+      <div class="mf-kpi mf-c-success">
+        <div class="mf-kpi__label"><i class="bi bi-arrows-vertical"></i> Altura total</div>
+        <div class="mf-kpi__valor">{{ resultados.altura_total | num(2) }}<span class="mf-kpi__unidad">m</span></div>
+        <div class="mf-kpi__nota">Cilindro {{ resultados.H | num(2) }} + tolva {{ resultados.altura_tolva | num(2) }} m</div>
+      </div>
+      <div class="mf-kpi mf-c-warning">
+        <div class="mf-kpi__label"><i class="bi bi-arrow-down-square"></i> Presión de pared (Janssen)</div>
+        <div class="mf-kpi__valor">{{ resultados.p_lateral | num(1) }}<span class="mf-kpi__unidad">kPa</span></div>
+        <div class="mf-kpi__nota">Vertical {{ resultados.p_vertical | num(1) }} kPa · H/D = {{ resultados.esbeltez | num(2) }}</div>
+      </div>
+    </div>
+
+    {% for nota in notas %}
+    <div class="mf-alerta mf-alerta-{{ nota.color }} mb-2">
+      <i class="bi bi-{{ 'check-circle-fill' if nota.color == 'success' else 'exclamation-triangle-fill' if nota.color in ['warning','danger'] else 'info-circle-fill' }}"></i>
+      <div>{{ nota.texto }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="mf-grid mf-grid-2 mt-3 mb-3">
+      {% if graficos.capacidad %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-graph-up"></i> Capacidad según la altura</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.capacidad | tojson }}'></div>
+          <p class="mf-esquema-nota">Permite tantear la altura necesaria para alcanzar la autonomía deseada.</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if graficos.presion %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-arrow-down"></i> Perfil de presión</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.presion | tojson }}'></div>
+          <p class="mf-esquema-nota">La fricción con la pared hace que la presión se estabilice con la
+             profundidad: un silo no se comporta como una columna de líquido.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mf-grid mf-grid-2">
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-123"></i> Desarrollo del cálculo</h3></div>
+        <div class="mf-card__body">
+          {% for paso in resultados.pasos %}
+            {% if paso %}
+            <div class="mf-paso"><span class="mf-paso__n">{{ loop.index }}</span><span class="mf-paso__txt">{{ paso }}</span></div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mf-card">
+        <div class="mf-card__head">
+          <h3><i class="bi bi-table"></i> Hoja de resultados</h3>
+          <div class="mf-acciones mf-no-print">
+            <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-silo" data-nombre="silo">
+              <i class="bi bi-filetype-csv"></i> CSV
+            </button>
+          </div>
+        </div>
+        <div class="mf-card__body">
+          <div class="mf-tabla-wrap">
+            <table class="mf-tabla" id="mf-tabla-silo">
+              <thead><tr><th class="mf-col-txt">Parámetro</th><th>Valor</th><th class="mf-col-txt">Unidad</th></tr></thead>
+              <tbody>
+                <tr><td class="mf-col-txt">Área de la sección</td><td>{{ resultados.area | num(3) }}</td><td class="mf-col-txt">m²</td></tr>
+                <tr><td class="mf-col-txt">Volumen del cilindro</td><td>{{ resultados.vol_cilindro | num(2) }}</td><td class="mf-col-txt">m³</td></tr>
+                <tr><td class="mf-col-txt">Volumen de la tolva</td><td>{{ resultados.vol_tolva | num(2) }}</td><td class="mf-col-txt">m³</td></tr>
+                <tr><td class="mf-col-txt">Volumen total</td><td>{{ resultados.vol_total | num(2) }}</td><td class="mf-col-txt">m³</td></tr>
+                <tr><td class="mf-col-txt">Volumen útil</td><td>{{ resultados.vol_util | num(2) }}</td><td class="mf-col-txt">m³</td></tr>
+                <tr><td class="mf-col-txt">Capacidad almacenada</td><td>{{ resultados.capacidad | num(2) }}</td><td class="mf-col-txt">t</td></tr>
+                <tr><td class="mf-col-txt">Altura de la tolva</td><td>{{ resultados.altura_tolva | num(3) }}</td><td class="mf-col-txt">m</td></tr>
+                <tr><td class="mf-col-txt">Boca de descarga</td><td>{{ resultados.diametro_descarga | num(3) }}</td><td class="mf-col-txt">m</td></tr>
+                <tr><td class="mf-col-txt">Esbeltez H/D</td><td>{{ resultados.esbeltez | num(2) }}</td><td class="mf-col-txt">—</td></tr>
+                <tr><td class="mf-col-txt">Presión vertical (Janssen)</td><td>{{ resultados.p_vertical | num(2) }}</td><td class="mf-col-txt">kPa</td></tr>
+                <tr><td class="mf-col-txt">Presión lateral sobre la pared</td><td>{{ resultados.p_lateral | num(2) }}</td><td class="mf-col-txt">kPa</td></tr>
+                <tr><td class="mf-col-txt">Presión hidrostática equivalente</td><td>{{ resultados.p_hidrostatica | num(2) }}</td><td class="mf-col-txt">kPa</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mf-alerta mf-alerta-info mt-3">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>Janssen se calculó con k = 0,40 (relación de presiones) y μ = 0,45 (fricción
+                 material-acero). Ajusta estos valores con ensayos de flujo para un diseño definitivo.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-inboxes"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Ingresa el diámetro, la altura y la densidad aparente del material.
+             Pulsa <strong>Cargar ejemplo</strong> para dimensionar una tolva de gruesos típica.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('mf-ejemplo-silo').addEventListener('click', function () {
+  const ej = { diametro_silo: 8, altura_silo: 12, angulo_tolva: 60, diametro_descarga: 1.2,
+               densidad_material: 1.8, angulo_reposo: 35, tratamiento: 180, llenado_util: 0.85 };
+  Object.keys(ej).forEach(function (k) { const e = document.getElementById(k); if (e) e.value = ej[k]; });
+  MF.aviso('Ejemplo cargado: tolva de gruesos para una planta de 180 t/h.', 'info', 4000);
+});
+</script>
+{% endblock %}

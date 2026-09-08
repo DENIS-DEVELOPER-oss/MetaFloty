@@ -1,0 +1,16 @@
+# MetaFlotPy — dependencias
+# Instalación:  pip install -r requirements.txt
+
+# --- Aplicación ---
+Flask==3.1.2
+Flask-WTF==1.2.2
+WTForms==3.2.1
+pandas==2.3.3
+numpy==2.4.0
+scipy==1.16.3
+plotly==6.5.0
+
+# --- Servidor WSGI de producción ---
+# pip instala solo el que corresponde al sistema operativo.
+gunicorn==23.0.0 ; sys_platform != "win32"
+waitress==3.0.2  ; sys_platform == "win32"

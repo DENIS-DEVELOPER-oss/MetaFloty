@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block titulo %}Dimensionamiento · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Módulo IV · Dimensionamiento{% endblock %}
+{% block ruta %}Equipos de conminución, clasificación, concentración y almacenamiento{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-rulers"></i> Módulo IV</div>
+    <h1>Dimensionamiento de equipos</h1>
+    <p>Prediseño de los equipos principales de una planta concentradora. Cada herramienta aplica un
+       modelo publicado y muestra el desarrollo completo del cálculo, de modo que puedas verificar
+       cada paso y contrastarlo con las curvas del fabricante.</p>
+  </div>
+</div>
+
+<div class="mf-grid mf-grid-3 mb-4">
+  <a class="mf-card-link mf-c-primary" href="{{ url_for('dimensionamiento.molino_barras') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-record-circle"></i></span>
+    <h3>Molino de barras</h3>
+    <p>Molienda primaria. Potencia de Bond y geometría D × L a partir de la ecuación de
+       potencia de Bond-Rowland.</p>
+    <span class="mf-card-link__cta">Dimensionar <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-accent" href="{{ url_for('dimensionamiento.molino_bolas') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-circle-fill"></i></span>
+    <h3>Molino de bolas</h3>
+    <p>Molienda secundaria y remolienda. Incluye velocidad crítica, carga moledora y tamaño
+       de bola de reposición.</p>
+    <span class="mf-card-link__cta">Dimensionar <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-info" href="{{ url_for('dimensionamiento.hidrociclones') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-filter-circle"></i></span>
+    <h3>Hidrociclones</h3>
+    <p>Clasificación. Diámetro de ciclón para un corte objetivo según Plitt, con caída de presión
+       y número de unidades.</p>
+    <span class="mf-card-link__cta">Dimensionar <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-success" href="{{ url_for('dimensionamiento.separadores') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-layers-half"></i></span>
+    <h3>Separadores gravimétricos</h3>
+    <p>Jigs, espirales y mesas. Criterio de concentración y velocidad terminal con
+       identificación del régimen de sedimentación.</p>
+    <span class="mf-card-link__cta">Evaluar <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-warning" href="{{ url_for('dimensionamiento.almacenamiento') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-inboxes"></i></span>
+    <h3>Silos y tolvas</h3>
+    <p>Capacidad, autonomía operativa, criterio de flujo másico y presión de pared según
+       la teoría de Janssen.</p>
+    <span class="mf-card-link__cta">Dimensionar <i class="bi bi-arrow-right"></i></span>
+  </a>
+</div>
+
+<div class="mf-grid mf-grid-2">
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-journal-text"></i> Modelos empleados</h3></div>
+    <div class="mf-card__body">
+      <div class="mf-tabla-wrap">
+        <table class="mf-tabla">
+          <thead><tr><th class="mf-col-txt">Equipo</th><th class="mf-col-txt">Modelo</th></tr></thead>
+          <tbody>
+            <tr><td class="mf-col-txt">Molinos</td><td class="mf-col-txt">Bond (1961) + ecuación de potencia Bond-Rowland</td></tr>
+            <tr><td class="mf-col-txt">Hidrociclones</td><td class="mf-col-txt">Plitt (1976), proporciones estándar Krebs</td></tr>
+            <tr><td class="mf-col-txt">Separadores</td><td class="mf-col-txt">Criterio de Taggart + Stokes / Newton</td></tr>
+            <tr><td class="mf-col-txt">Silos</td><td class="mf-col-txt">Geometría cilindro-cono + Janssen</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-exclamation-triangle"></i> Alcance de los resultados</h3></div>
+    <div class="mf-card__body">
+      <div class="mf-alerta mf-alerta-warning mb-2">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>Los valores obtenidos corresponden a <strong>ingeniería conceptual</strong>: sirven para
+             prediseño, comparación de alternativas y docencia.</div>
+      </div>
+      <div class="mf-alerta mf-alerta-info mb-2">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>Todos los modelos son empíricos y fueron calibrados en rangos concretos. Fuera de esos
+             rangos las estimaciones pierden validez.</div>
+      </div>
+      <div class="mf-alerta mf-alerta-info">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>Para el diseño de detalle se requieren ensayos de laboratorio del mineral específico y
+             las curvas de desempeño del fabricante del equipo.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

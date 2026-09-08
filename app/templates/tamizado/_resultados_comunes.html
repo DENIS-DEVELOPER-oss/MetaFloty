@@ -1,0 +1,172 @@
+{# Bloque de resultados compartido: descriptores, tabla y curva granulométrica. #}
+
+{% if descriptores %}
+<div class="mf-kpis mb-3">
+  <div class="mf-kpi mf-c-primary">
+    <div class="mf-kpi__label"><i class="bi bi-rulers"></i> d₈₀</div>
+    <div class="mf-kpi__valor">{{ descriptores.d80 | num_auto }}<span class="mf-kpi__unidad">mm</span></div>
+    <div class="mf-kpi__nota">80 % del material pasa este tamaño</div>
+  </div>
+  <div class="mf-kpi mf-c-accent">
+    <div class="mf-kpi__label"><i class="bi bi-rulers"></i> d₅₀</div>
+    <div class="mf-kpi__valor">{{ descriptores.d50 | num_auto }}<span class="mf-kpi__unidad">mm</span></div>
+    <div class="mf-kpi__nota">Tamaño mediano de la muestra</div>
+  </div>
+  <div class="mf-kpi mf-c-info">
+    <div class="mf-kpi__label"><i class="bi bi-distribute-vertical"></i> Cu</div>
+    <div class="mf-kpi__valor">{{ descriptores.cu | num(2) }}</div>
+    <div class="mf-kpi__nota">Uniformidad · d₆₀/d₁₀</div>
+  </div>
+  <div class="mf-kpi mf-c-success">
+    <div class="mf-kpi__label"><i class="bi bi-graph-up"></i> Cc</div>
+    <div class="mf-kpi__valor">{{ descriptores.cc | num(2) }}</div>
+    <div class="mf-kpi__nota">Curvatura · d₃₀²/(d₁₀·d₆₀)</div>
+  </div>
+  <div class="mf-kpi {{ 'mf-c-success' if descriptores.masa_ok else 'mf-c-warning' }}">
+    <div class="mf-kpi__label"><i class="bi bi-check2-square"></i> Cierre de masa</div>
+    <div class="mf-kpi__valor">{{ descriptores.error_masa_pct | num(2) }}<span class="mf-kpi__unidad">%</span></div>
+    <div class="mf-kpi__nota">
+      {{ descriptores.suma_retenidos | num(2) }} g de {{ descriptores.peso_total | num(2) }} g
+    </div>
+  </div>
+</div>
+
+{% if not descriptores.masa_ok %}
+<div class="mf-alerta mf-alerta-warning mb-3">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <div>
+    <strong>Diferencia de masa de {{ descriptores.error_masa | num(2) }} g
+    ({{ descriptores.error_masa_pct | num(2) }} %).</strong>
+    Una desviación superior al 1 % suele indicar pérdida de finos durante el tamizado o un error de pesaje.
+    Los porcentajes se calcularon sobre el peso total declarado.
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+<div class="mf-grid mf-grid-2 mb-3">
+  <div class="mf-card">
+    <div class="mf-card__head">
+      <h3><i class="bi bi-graph-up"></i> Curva granulométrica</h3>
+    </div>
+    <div class="mf-card__body">
+      <div class="mf-grafico" data-figura='{{ grafico_principal | tojson }}'></div>
+    </div>
+  </div>
+
+  {% if grafico_secundario is defined and grafico_secundario %}
+  <div class="mf-card">
+    <div class="mf-card__head">
+      <h3><i class="bi bi-rulers"></i> {{ titulo_secundario | default('Linealización del modelo') }}</h3>
+    </div>
+    <div class="mf-card__body">
+      <div class="mf-grafico" data-figura='{{ grafico_secundario | tojson }}'></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if descriptores %}
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-bounding-box"></i> Tamaños característicos</h3>
+    <div class="mf-acciones mf-no-print">
+      <span class="mf-badge">{{ descriptores.n_mallas }} mallas · {{ descriptores.rango_min | num_auto }}–{{ descriptores.rango_max | num_auto }} mm</span>
+    </div>
+  </div>
+  <div class="mf-card__body">
+    <div class="mf-tabla-wrap">
+      <table class="mf-tabla" id="mf-tabla-percentiles">
+        <thead>
+          <tr>
+            <th>Percentil</th><th>d₁₀</th><th>d₂₅</th><th>d₃₀</th><th>d₅₀</th>
+            <th>d₆₀</th><th>d₇₅</th><th>d₈₀</th><th>d₉₀</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mf-col-txt">Tamaño (mm)</td>
+            <td>{{ descriptores.d10 | num_auto }}</td>
+            <td>{{ descriptores.d25 | num_auto }}</td>
+            <td>{{ descriptores.d30 | num_auto }}</td>
+            <td>{{ descriptores.d50 | num_auto }}</td>
+            <td>{{ descriptores.d60 | num_auto }}</td>
+            <td>{{ descriptores.d75 | num_auto }}</td>
+            <td>{{ descriptores.d80 | num_auto }}</td>
+            <td>{{ descriptores.d90 | num_auto }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mf-alerta mf-alerta-info mt-3">
+      <i class="bi bi-info-circle-fill"></i>
+      <div>
+        <strong>{{ descriptores.clasificacion }}.</strong>
+        Los percentiles se interpolan sobre log(d) entre mallas contiguas; los que quedan fuera
+        del rango medido se muestran como «—» en lugar de extrapolarse.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-table"></i> Tabla granulométrica</h3>
+    <div class="mf-acciones mf-no-print">
+      <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-resultados" data-nombre="granulometria">
+        <i class="bi bi-filetype-csv"></i> Exportar CSV
+      </button>
+      <button class="btn btn-sm btn-mf-suave" data-imprimir>
+        <i class="bi bi-printer"></i> Imprimir
+      </button>
+    </div>
+  </div>
+  <div class="mf-card__body">
+    <div class="mf-tabla-wrap">
+      <table class="mf-tabla" id="mf-tabla-resultados">
+        <thead>
+          <tr>
+            <th>Malla</th>
+            <th>Abertura <small>d (mm)</small></th>
+            <th>Peso ret. <small>w (g)</small></th>
+            <th>% Retenido <small>%Rᵢ</small></th>
+            <th>% Ret. acum. <small>%Aᵢ</small></th>
+            <th>% Pasante <small>%Pᵢ</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in tabla_datos %}
+          <tr>
+            <td class="mf-col-txt">{{ fila.nombre }}</td>
+            <td>{{ fila.abertura | num_auto }}</td>
+            <td>{{ fila.peso_retenido | num(2) }}</td>
+            <td>{{ fila.porcentaje_retenido | num(2) }}</td>
+            <td>{{ fila.porcentaje_acumulado | num(2) }}</td>
+            <td>{{ fila.porcentaje_pasante | num(2) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Totales</td>
+            <td>{{ descriptores.suma_retenidos | num(2) }}</td>
+            <td>{{ (descriptores.suma_retenidos / descriptores.peso_total * 100) | num(2) }}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if grafico_barras %}
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-bar-chart"></i> Retenido parcial por malla</h3>
+  </div>
+  <div class="mf-card__body">
+    <div class="mf-grafico mf-grafico-sm" data-figura='{{ grafico_barras | tojson }}'></div>
+  </div>
+</div>
+{% endif %}

@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_separador %}
+
+{% block titulo %}Separadores gravimétricos · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Separadores gravimétricos{% endblock %}
+{% block ruta %}Módulo IV · Dimensionamiento de equipos{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-rulers"></i> Módulo IV · Dimensionamiento</div>
+    <h1>Concentración gravimétrica</h1>
+    <p>Evalúa la viabilidad de separar por gravedad mediante el <strong>criterio de concentración</strong>
+       de Taggart y calcula la velocidad terminal de sedimentación identificando el régimen
+       (Stokes, transición o Newton) a partir del número de Reynolds.</p>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">{{ esq_separador() }}</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head"><h2><i class="bi bi-sliders"></i> Propiedades del sistema</h2></div>
+
+  <form method="POST" data-ajax="#mf-resultados" data-validar data-cargando>
+    <div class="mf-card__body">
+      <fieldset class="mf-fieldset">
+        <legend>Densidades</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="densidad_mineral"><span class="mf-sim">ρh</span> · Mineral pesado (valioso)</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="densidad_mineral" name="densidad_mineral"
+                     step="0.01" min="1" max="25" placeholder="7.5" required value="{{ entradas.get('densidad_mineral', '') }}">
+              <span class="input-group-text">g/cm³</span>
+            </div>
+            <div class="form-text">Galena 7,5 · Casiterita 7,0 · Oro 19,3 · Wolframita 7,3.</div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="densidad_ganga"><span class="mf-sim">ρl</span> · Ganga liviana</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="densidad_ganga" name="densidad_ganga"
+                     step="0.01" min="1" max="25" placeholder="2.65" required value="{{ entradas.get('densidad_ganga', '') }}">
+              <span class="input-group-text">g/cm³</span>
+            </div>
+            <div class="form-text">Cuarzo 2,65 · Feldespato 2,6 · Calcita 2,71.</div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="densidad_fluido"><span class="mf-sim">ρf</span> · Fluido</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="densidad_fluido" name="densidad_fluido"
+                     step="0.01" min="0.5" max="3" value="{{ entradas.get('densidad_fluido', '1.0') }}">
+              <span class="input-group-text">g/cm³</span>
+            </div>
+            <div class="form-text">Agua 1,0 · medio denso 1,3–3,0.</div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="mf-fieldset">
+        <legend>Partícula y fluido</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="tamano_particula"><span class="mf-sim">d</span> · Tamaño de partícula</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="tamano_particula" name="tamano_particula"
+                     step="0.001" min="0.001" max="100" placeholder="0.5" required value="{{ entradas.get('tamano_particula', '') }}">
+              <span class="input-group-text">mm</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="viscosidad"><span class="mf-sim">μ</span> · Viscosidad del fluido</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="viscosidad" name="viscosidad"
+                     step="0.0001" min="0.000001" max="1" value="{{ entradas.get('viscosidad', '0.001') }}">
+              <span class="input-group-text">Pa·s</span>
+            </div>
+            <div class="form-text">Agua a 20 °C: 0,001 Pa·s.</div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 mf-no-print">
+      <button type="submit" class="btn btn-mf"><i class="bi bi-calculator"></i> Evaluar separación</button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-sep"><i class="bi bi-magic"></i> Cargar ejemplo</button>
+    </div>
+  </form>
+</div>
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">{{ resultados.viabilidad }}</h1>
+      </div>
+      <span class="mf-badge mf-badge-{{ resultados.viabilidad_color }}">
+        <i class="bi bi-layers-half"></i> CC = {{ resultados.criterio | num(2) }}
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-{{ 'success' if resultados.viabilidad_color == 'success' else resultados.viabilidad_color }}">
+        <div class="mf-kpi__label"><i class="bi bi-layers-half"></i> Criterio de concentración</div>
+        <div class="mf-kpi__valor">{{ resultados.criterio | num(3) }}</div>
+        <div class="mf-kpi__nota">Tamaño mínimo: {{ resultados.limite }}</div>
+      </div>
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-arrow-down"></i> Velocidad terminal</div>
+        <div class="mf-kpi__valor">{{ resultados.vt_mm_s | num(2) }}<span class="mf-kpi__unidad">mm/s</span></div>
+        <div class="mf-kpi__nota">{{ resultados.regimen }}</div>
+      </div>
+      <div class="mf-kpi mf-c-info">
+        <div class="mf-kpi__label"><i class="bi bi-water"></i> Número de Reynolds</div>
+        <div class="mf-kpi__valor">{{ resultados.reynolds | num(2) }}</div>
+        <div class="mf-kpi__nota">Define el régimen aplicable</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-distribute-vertical"></i> Selectividad</div>
+        <div class="mf-kpi__valor">{{ resultados.razon_velocidades | num(2) }}<span class="mf-kpi__unidad">×</span></div>
+        <div class="mf-kpi__nota">Velocidad pesado / liviano</div>
+      </div>
+      <div class="mf-kpi mf-c-warning">
+        <div class="mf-kpi__label"><i class="bi bi-rulers"></i> Contraste de densidad</div>
+        <div class="mf-kpi__valor">{{ resultados.delta_densidad | num(2) }}<span class="mf-kpi__unidad">g/cm³</span></div>
+        <div class="mf-kpi__nota">ρ pesado − ρ ganga</div>
+      </div>
+    </div>
+
+    {% for nota in notas %}
+    <div class="mf-alerta mf-alerta-{{ nota.color }} mb-2">
+      <i class="bi bi-{{ 'check-circle-fill' if nota.color == 'success' else 'exclamation-triangle-fill' if nota.color in ['warning','danger'] else 'info-circle-fill' }}"></i>
+      <div>{{ nota.texto }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="mf-grid mf-grid-2 mt-3 mb-3">
+      {% if graficos.criterio %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-graph-up"></i> Criterio según la densidad</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.criterio | tojson }}'></div>
+          <p class="mf-esquema-nota">Umbrales clásicos de Taggart para la viabilidad de la
+             concentración gravimétrica.</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if graficos.velocidades %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-arrow-down-up"></i> Velocidad terminal vs tamaño</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.velocidades | tojson }}'></div>
+          <p class="mf-esquema-nota">Cuanto más separadas estén las dos curvas, más nítida es la
+             separación por gravedad a ese tamaño.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mf-grid mf-grid-2">
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-123"></i> Desarrollo del cálculo</h3></div>
+        <div class="mf-card__body">
+          {% for paso in resultados.pasos %}
+            {% if paso %}
+            <div class="mf-paso"><span class="mf-paso__n">{{ loop.index }}</span><span class="mf-paso__txt">{{ paso }}</span></div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mf-card">
+        <div class="mf-card__head">
+          <h3><i class="bi bi-table"></i> Resumen</h3>
+          <div class="mf-acciones mf-no-print">
+            <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-sep" data-nombre="separadores">
+              <i class="bi bi-filetype-csv"></i> CSV
+            </button>
+          </div>
+        </div>
+        <div class="mf-card__body">
+          <div class="mf-tabla-wrap">
+            <table class="mf-tabla" id="mf-tabla-sep">
+              <thead><tr><th class="mf-col-txt">Parámetro</th><th>Valor</th><th class="mf-col-txt">Unidad</th></tr></thead>
+              <tbody>
+                <tr><td class="mf-col-txt">Criterio de concentración CC</td><td>{{ resultados.criterio | num(3) }}</td><td class="mf-col-txt">—</td></tr>
+                <tr><td class="mf-col-txt">Velocidad terminal adoptada</td><td>{{ resultados.vt_mm_s | num(3) }}</td><td class="mf-col-txt">mm/s</td></tr>
+                <tr><td class="mf-col-txt">Velocidad según Stokes</td><td>{{ (resultados.vt_stokes * 1000) | num(3) }}</td><td class="mf-col-txt">mm/s</td></tr>
+                <tr><td class="mf-col-txt">Velocidad según Newton</td><td>{{ (resultados.vt_newton * 1000) | num(3) }}</td><td class="mf-col-txt">mm/s</td></tr>
+                <tr><td class="mf-col-txt">Velocidad de la ganga</td><td>{{ (resultados.vt_ganga * 1000) | num(3) }}</td><td class="mf-col-txt">mm/s</td></tr>
+                <tr><td class="mf-col-txt">Número de Reynolds</td><td>{{ resultados.reynolds | num(3) }}</td><td class="mf-col-txt">—</td></tr>
+                <tr><td class="mf-col-txt">Tamaño de partícula evaluado</td><td>{{ resultados.tamano | num(3) }}</td><td class="mf-col-txt">mm</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mf-alerta mf-alerta-info mt-3">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>Las velocidades corresponden a partículas esféricas aisladas. En un lecho denso
+                 la sedimentación es <em>obstaculizada</em> y las velocidades reales son menores.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-layers-half"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Ingresa las densidades del mineral, la ganga y el fluido, junto con el tamaño de
+             partícula. Pulsa <strong>Cargar ejemplo</strong> para evaluar un caso de galena en cuarzo.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('mf-ejemplo-sep').addEventListener('click', function () {
+  const ej = { densidad_mineral: 7.5, densidad_ganga: 2.65, densidad_fluido: 1.0,
+               tamano_particula: 0.5, viscosidad: 0.001 };
+  Object.keys(ej).forEach(function (k) { const e = document.getElementById(k); if (e) e.value = ej[k]; });
+  MF.aviso('Ejemplo cargado: galena (7,5) en ganga de cuarzo (2,65).', 'info', 4000);
+});
+</script>
+{% endblock %}

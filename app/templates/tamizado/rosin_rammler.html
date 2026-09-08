@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_tamices %}
+
+{% block titulo %}Rosin-Rammler · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Rosin-Rammler{% endblock %}
+{% block ruta %}Módulo I · Granulometría · Modelo Rosin-Rammler{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-funnel"></i> Módulo I · Granulometría</div>
+    <h1>Distribución Rosin-Rammler</h1>
+    <p>Ajusta el retenido acumulado a <strong>R(d) = 100·e^[−(d/d₀)ⁿ]</strong> linealizando con
+       ln[−ln(R/100)]. Es el modelo habitual para productos de chancado y molienda, y entrega el
+       tamaño característico d₀ (63,2 % pasante) junto al módulo de uniformidad n.</p>
+  </div>
+  <div class="mf-btn-grupo mf-no-print">
+    <a class="btn btn-sm btn-mf-suave" href="{{ url_for('tamizado.analisis_granulometrico') }}">
+      <i class="bi bi-arrow-left-right"></i> Comparar con GGS
+    </a>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">{{ esq_tamices() }}</div>
+
+{% set boton_texto = 'Calcular Rosin-Rammler' %}
+{% include "tamizado/_entrada.html" %}
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados_calculo %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">Ajuste al modelo Rosin-Rammler</h1>
+      </div>
+      <span class="mf-badge mf-badge-{{ resultados_calculo.calidad_color }}">
+        <i class="bi bi-patch-check"></i> {{ resultados_calculo.calidad }} · R² = {{ resultados_calculo.r2 | num(4) }}
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-bullseye"></i> Tamaño característico d₀</div>
+        <div class="mf-kpi__valor">{{ resultados_calculo.d0 | num_auto }}<span class="mf-kpi__unidad">mm</span></div>
+        <div class="mf-kpi__nota">63,2 % del material pasa este tamaño</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-distribute-vertical"></i> Módulo n</div>
+        <div class="mf-kpi__valor">{{ resultados_calculo.n | num(4) }}</div>
+        <div class="mf-kpi__nota">Uniformidad de la distribución</div>
+      </div>
+      <div class="mf-kpi mf-c-success">
+        <div class="mf-kpi__label"><i class="bi bi-graph-up"></i> R²</div>
+        <div class="mf-kpi__valor">{{ resultados_calculo.r2 | num(4) }}</div>
+        <div class="mf-kpi__nota">Bondad del ajuste linealizado</div>
+      </div>
+      <div class="mf-kpi mf-c-info">
+        <div class="mf-kpi__label"><i class="bi bi-rulers"></i> d₈₀ medido</div>
+        <div class="mf-kpi__valor">{{ descriptores.d80 | num_auto }}<span class="mf-kpi__unidad">mm</span></div>
+        <div class="mf-kpi__nota">Interpolado de los datos del ensayo</div>
+      </div>
+    </div>
+
+    <div class="mf-card mb-3">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-braces"></i> Modelo ajustado</h3>
+        <div class="mf-acciones mf-no-print">
+          <button class="btn btn-sm btn-mf-suave" data-copiar="{{ resultados_calculo.formula_rosin }}">
+            <i class="bi bi-clipboard"></i> Copiar ecuación
+          </button>
+        </div>
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-formula-lista mb-3">
+          <div class="mf-formula">{{ resultados_calculo.formula_rosin }}</div>
+          <div class="mf-formula">{{ resultados_calculo.ecuacion_lineal }}</div>
+        </div>
+        <div class="mf-alerta mf-alerta-info">
+          <i class="bi bi-lightbulb-fill"></i>
+          <div>{{ resultados_calculo.interpretacion }}</div>
+        </div>
+      </div>
+    </div>
+
+    {% set grafico_secundario = grafico_semilog %}
+    {% set titulo_secundario = 'Linealización ln[−ln(R/100)] vs ln(d)' %}
+    {% include "tamizado/_resultados_comunes.html" %}
+
+    <div class="mf-card">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-calculator"></i> Detalle de la linealización</h3>
+        <div class="mf-acciones mf-no-print">
+          <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-rr" data-nombre="rosin-rammler">
+            <i class="bi bi-filetype-csv"></i> Exportar CSV
+          </button>
+        </div>
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-tabla-wrap">
+          <table class="mf-tabla" id="mf-tabla-rr">
+            <thead>
+              <tr>
+                <th>Malla</th>
+                <th>d <small>(mm)</small></th>
+                <th>R(d) <small>% ret. acum.</small></th>
+                <th>x = ln(d)</th>
+                <th>y = ln[−ln(R/100)]</th>
+                <th>y calculado</th>
+                <th>Residuo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in resultados_calculo.tabla_logaritmos %}
+              <tr>
+                <td class="mf-col-txt">{{ f.nombre }}</td>
+                <td>{{ f.abertura | num_auto }}</td>
+                <td>{{ f.R_d | num(2) }}</td>
+                <td>{{ f.ln_d | num(4) }}</td>
+                <td>{{ f.ln_ln_R | num(4) }}</td>
+                <td>{{ f.ln_ln_R_calc | num(4) }}</td>
+                <td>{{ (f.ln_ln_R - f.ln_ln_R_calc) | num(4) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-clipboard-data"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Registra los pesos retenidos de cada malla y pulsa <strong>Calcular Rosin-Rammler</strong>.
+             El botón <strong>Ejemplo</strong> carga un ensayo completo para probar el módulo.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tamizado.js') }}?v={{ version }}"></script>
+<script>
+  MFTamizado.iniciar({
+    astm: {{ mallas_astm | tojson }},
+    tyler: {{ mallas_tyler | tojson }},
+    ejemplo: [
+      {nombre: '1/2"',    abertura: 12.700, peso: 32.5},
+      {nombre: '3/8"',    abertura: 9.525,  peso: 58.0},
+      {nombre: '1/4"',    abertura: 6.350,  peso: 94.5},
+      {nombre: 'N.º 4',   abertura: 4.750,  peso: 118.0},
+      {nombre: 'N.º 8',   abertura: 2.360,  peso: 165.5},
+      {nombre: 'N.º 16',  abertura: 1.180,  peso: 158.0},
+      {nombre: 'N.º 30',  abertura: 0.600,  peso: 126.0},
+      {nombre: 'N.º 50',  abertura: 0.300,  peso: 92.5},
+      {nombre: 'N.º 100', abertura: 0.150,  peso: 68.0},
+      {nombre: 'N.º 200', abertura: 0.075,  peso: 51.0},
+      {nombre: 'Fondo',   abertura: 0.038,  peso: 36.0}
+    ]
+  });
+</script>
+{% endblock %}

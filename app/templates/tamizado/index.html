@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_tamices %}
+
+{% block titulo %}Granulometría · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Módulo I · Granulometría{% endblock %}
+{% block ruta %}Análisis de tamaño de partícula{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-funnel"></i> Módulo I</div>
+    <h1>Análisis de tamaño de partícula</h1>
+    <p>Procesa un ensayo de tamizado y ajústalo a tres modelos de distribución. Los tres comparten
+       la misma tabla de entrada, de modo que puedes cargar los datos una vez y comparar qué modelo
+       describe mejor tu material.</p>
+  </div>
+</div>
+
+<div class="mb-3">{{ esq_tamices() }}</div>
+
+<div class="mf-grid mf-grid-3 mb-4">
+  <a class="mf-card-link mf-c-primary" href="{{ url_for('tamizado.analisis_granulometrico') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-graph-down"></i></span>
+    <h3>Gates-Gaudin-Schuhmann</h3>
+    <p>Modelo potencial %P = 100·(d/k)ⁿ. Entrega el exponente de distribución n y el módulo de
+       tamaño k. Es el estándar para productos de molienda fina.</p>
+    <span class="mf-card-link__cta">Abrir análisis <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-accent" href="{{ url_for('tamizado.rosin_rammler') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-graph-up-arrow"></i></span>
+    <h3>Rosin-Rammler</h3>
+    <p>Modelo exponencial R(d) = 100·e^[−(d/d₀)ⁿ]. Muy usado en chancado y voladura; d₀ es el
+       tamaño al 63,2 % pasante.</p>
+    <span class="mf-card-link__cta">Abrir análisis <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-info" href="{{ url_for('tamizado.regresion_lineal') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-rulers"></i></span>
+    <h3>Regresión empírica</h3>
+    <p>Ajuste por mínimos cuadrados de %P frente a log(d), con análisis de residuos para evaluar
+       la calidad de los datos del ensayo.</p>
+    <span class="mf-card-link__cta">Abrir análisis <i class="bi bi-arrow-right"></i></span>
+  </a>
+</div>
+
+<div class="mf-grid mf-grid-2">
+  <div class="mf-card">
+    <div class="mf-card__head">
+      <h3><i class="bi bi-list-check"></i> Qué calcula el módulo</h3>
+    </div>
+    <div class="mf-card__body">
+      <ul class="mb-0" style="padding-left:1.1rem; line-height:1.9">
+        <li>Porcentaje retenido, retenido acumulado y pasante acumulado por malla.</li>
+        <li>Tamaños característicos <strong>d₁₀, d₂₅, d₃₀, d₅₀, d₆₀, d₇₅, d₈₀ y d₉₀</strong>
+            por interpolación logarítmica.</li>
+        <li>Coeficiente de uniformidad <strong>Cu = d₆₀/d₁₀</strong> y de curvatura
+            <strong>Cc = d₃₀²/(d₁₀·d₆₀)</strong>.</li>
+        <li>Parámetros del modelo elegido con su coeficiente de determinación R².</li>
+        <li>Verificación del cierre de masa entre el peso declarado y la suma de retenidos.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mf-card">
+    <div class="mf-card__head">
+      <h3><i class="bi bi-lightbulb"></i> Cómo elegir el modelo</h3>
+    </div>
+    <div class="mf-card__body">
+      <div class="mf-alerta mf-alerta-info mb-2">
+        <i class="bi bi-1-circle-fill"></i>
+        <div><strong>Ejecuta los tres</strong> con los mismos datos y compara el R². El modelo con
+             mayor R² es el que mejor describe tu material.</div>
+      </div>
+      <div class="mf-alerta mf-alerta-info mb-2">
+        <i class="bi bi-2-circle-fill"></i>
+        <div><strong>GGS</strong> suele ajustar mejor en la zona de finos; <strong>Rosin-Rammler</strong>
+             describe mejor la cola de gruesos.</div>
+      </div>
+      <div class="mf-alerta mf-alerta-warning">
+        <i class="bi bi-3-circle-fill"></i>
+        <div>Un R² bajo en los tres modelos suele apuntar a errores de pesaje o a mallas
+             insuficientes: usa al menos 6–8 mallas bien distribuidas.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card mt-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-list-ol"></i> Series de mallas disponibles</h3>
+    <span class="mf-badge ms-auto">Se cargan con un clic en cada análisis</span>
+  </div>
+  <div class="mf-card__body">
+    <div class="mf-grid mf-grid-2">
+      <div>
+        <h4 class="mb-2" style="font-size:.85rem">Serie ASTM</h4>
+        <div class="mf-tabla-wrap" style="max-height:280px; overflow-y:auto">
+          <table class="mf-tabla">
+            <thead><tr><th>Malla</th><th>Abertura (mm)</th></tr></thead>
+            <tbody>
+              {% for nombre, ab in mallas_astm %}
+              <tr><td class="mf-col-txt">{{ nombre }}</td><td>{{ ab | num(3) }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h4 class="mb-2" style="font-size:.85rem">Serie Tyler</h4>
+        <div class="mf-tabla-wrap" style="max-height:280px; overflow-y:auto">
+          <table class="mf-tabla">
+            <thead><tr><th>Malla</th><th>Abertura (mm)</th></tr></thead>
+            <tbody>
+              {% for nombre, ab in mallas_tyler %}
+              <tr><td class="mf-col-txt">{{ nombre }}</td><td>{{ ab | num(3) }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block titulo %}MetaFlotPy · Panel de inicio{% endblock %}
+{% block titulo_pagina %}Panel de inicio{% endblock %}
+{% block ruta %}Plataforma de cálculo para procesamiento de minerales{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-hexagon-fill"></i> MetaFlotPy {{ version }}</div>
+    <h1>Cálculos de procesamiento de minerales</h1>
+    <p>Seis módulos que cubren la cadena completa de una planta concentradora: desde el análisis
+       granulométrico de la alimentación hasta la valorización comercial del concentrado.
+       Cada resultado muestra la fórmula aplicada y el desarrollo paso a paso.</p>
+  </div>
+  <div class="mf-btn-grupo mf-no-print">
+    <a class="btn btn-mf" href="{{ url_for('tamizado.analisis_granulometrico') }}">
+      <i class="bi bi-play-fill"></i> Empezar por granulometría
+    </a>
+    <a class="btn btn-mf-suave" href="{{ url_for('principal.introduccion') }}">
+      <i class="bi bi-book"></i> Guía de uso
+    </a>
+  </div>
+</div>
+
+{# --------- Flujo de proceso: mapa visual de los módulos --------- #}
+<div class="mf-card mb-4">
+  <div class="mf-card__head">
+    <h2><i class="bi bi-diagram-3"></i> La planta y los módulos que la calculan</h2>
+    <span class="mf-badge mf-badge-primary ms-auto">Mapa del proceso</span>
+  </div>
+  <div class="mf-card__body">
+    <svg class="mf-esquema" viewBox="0 0 900 260" role="img"
+         aria-label="Diagrama del flujo de una planta concentradora y los módulos de cálculo asociados">
+      <!-- Etapas -->
+      <path class="eq-flecha-act" d="M 16 92 L 56 92"/>
+      <text class="eq-sub" x="10" y="82">mineral</text>
+
+      <a href="{{ url_for('tamizado.analisis_granulometrico') }}">
+        <rect class="eq-caja-act" x="58" y="64" width="126" height="58" rx="9"/>
+        <text class="eq-rot" x="76" y="88">Chancado y</text>
+        <text class="eq-rot" x="76" y="103">clasificación</text>
+      </a>
+      <path class="eq-flecha-act" d="M 186 92 L 226 92"/>
+
+      <a href="{{ url_for('balance_masa.balance_masa') }}">
+        <rect class="eq-caja-act" x="228" y="64" width="126" height="58" rx="9"/>
+        <text class="eq-rot" x="256" y="88">Molienda y</text>
+        <text class="eq-rot" x="250" y="103">carga circulante</text>
+      </a>
+      <path class="eq-flecha-act" d="M 356 92 L 396 92"/>
+
+      <a href="{{ url_for('balance_metalurgico.balance_metalurgico') }}">
+        <rect class="eq-caja-act" x="398" y="64" width="126" height="58" rx="9"/>
+        <text class="eq-rot" x="426" y="88">Flotación y</text>
+        <text class="eq-rot" x="418" y="103">concentración</text>
+      </a>
+      <path class="eq-flecha-act" d="M 526 92 L 566 92"/>
+
+      <a href="{{ url_for('valorizacion.valorizacion') }}">
+        <rect class="eq-caja-ac2" x="568" y="64" width="126" height="58" rx="9"/>
+        <text class="eq-rot" x="588" y="88">Concentrado y</text>
+        <text class="eq-rot" x="600" y="103">liquidación</text>
+      </a>
+      <path class="eq-flecha-ac2" d="M 696 92 L 742 92"/>
+      <text class="eq-var2" x="750" y="88">NSR</text>
+      <text class="eq-sub" x="750" y="102">ingreso neto</text>
+
+      <!-- Relave -->
+      <path class="eq-flecha" d="M 461 124 L 461 164" style="stroke: var(--mf-danger)"/>
+      <text class="eq-sub" x="470" y="160" style="fill: var(--mf-danger)">relave</text>
+
+      <!-- Módulos transversales -->
+      <line class="eq-guia" x1="40" y1="188" x2="860" y2="188"/>
+      <text class="eq-sub" x="40" y="206">Transversales a todas las etapas</text>
+
+      <a href="{{ url_for('dimensionamiento.dimensionamiento') }}">
+        <rect class="eq-caja" x="40" y="214" width="200" height="34" rx="8"/>
+        <text class="eq-rot" x="58" y="235">IV · Dimensionamiento de equipos</text>
+      </a>
+      <a href="{{ url_for('utilitarios.utilitarios') }}">
+        <rect class="eq-caja" x="256" y="214" width="176" height="34" rx="8"/>
+        <text class="eq-rot" x="276" y="235">Utilitarios de planta</text>
+      </a>
+      <a href="{{ url_for('utilitarios.conversores') }}">
+        <rect class="eq-caja" x="448" y="214" width="176" height="34" rx="8"/>
+        <text class="eq-rot" x="470" y="235">Conversores de unidades</text>
+      </a>
+      <a href="{{ url_for('principal.introduccion') }}">
+        <rect class="eq-caja" x="640" y="214" width="150" height="34" rx="8"/>
+        <text class="eq-rot" x="666" y="235">Guía de uso</text>
+      </a>
+
+      <!-- Etiquetas de módulo -->
+      <text class="eq-var" x="66" y="56">Módulo I</text>
+      <text class="eq-var" x="236" y="56">Módulo II</text>
+      <text class="eq-var" x="406" y="56">Módulo III</text>
+      <text class="eq-var2" x="576" y="56">Módulo V</text>
+    </svg>
+    <p class="mf-esquema-nota">Haz clic en cualquier etapa del diagrama para abrir su módulo de cálculo.</p>
+  </div>
+</div>
+
+{# --------- Tarjetas de módulos --------- #}
+<h2 class="h5 mb-3">Módulos de cálculo</h2>
+<div class="mf-grid mf-grid-3 mb-4">
+  <a class="mf-card-link mf-c-primary" href="{{ url_for('tamizado.index') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-funnel"></i></span>
+    <h3>I · Análisis granulométrico</h3>
+    <p>Curvas de distribución de tamaño, modelos Gates-Gaudin-Schuhmann y Rosin-Rammler,
+       tamaños característicos d₁₀ a d₉₀ y coeficientes de uniformidad.</p>
+    <span class="mf-card-link__cta">Abrir módulo <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-info" href="{{ url_for('balance_masa.balance_masa') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-diagram-3"></i></span>
+    <h3>II · Balance de masa</h3>
+    <p>Circuitos directo, inverso y SABC. Resuelve la corriente desconocida, calcula la carga
+       circulante y verifica el cierre del balance con diagrama de flujos.</p>
+    <span class="mf-card-link__cta">Abrir módulo <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-success" href="{{ url_for('balance_metalurgico.balance_metalurgico') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-graph-up-arrow"></i></span>
+    <h3>III · Balance metalúrgico</h3>
+    <p>Recuperación, razón de concentración y distribución del metal. Incluye la fórmula de
+       dos productos y la curva ley-recuperación.</p>
+    <span class="mf-card-link__cta">Abrir módulo <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-warning" href="{{ url_for('dimensionamiento.dimensionamiento') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-rulers"></i></span>
+    <h3>IV · Dimensionamiento</h3>
+    <p>Molinos de barras y bolas con la ecuación de Bond, hidrociclones según Plitt,
+       separadores gravimétricos y silos con presión de Janssen.</p>
+    <span class="mf-card-link__cta">Abrir módulo <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-accent" href="{{ url_for('valorizacion.valorizacion') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-cash-coin"></i></span>
+    <h3>V · Valorización</h3>
+    <p>Liquidación comercial completa: metal pagable, maquila, refinación, penalidades
+       y retorno neto de fundición por tonelada seca.</p>
+    <span class="mf-card-link__cta">Abrir módulo <i class="bi bi-arrow-right"></i></span>
+  </a>
+
+  <a class="mf-card-link mf-c-danger" href="{{ url_for('utilitarios.utilitarios') }}">
+    <span class="mf-card-link__icono"><i class="bi bi-tools"></i></span>
+    <h3>VI · Utilitarios</h3>
+    <p>Densidad de pulpa, equivalencias de ley, dosificación de reactivos, tiempo de
+       residencia y conversores de unidades.</p>
+    <span class="mf-card-link__cta">Abrir módulo <i class="bi bi-arrow-right"></i></span>
+  </a>
+</div>
+
+{# --------- Qué trae la plataforma --------- #}
+<div class="mf-grid mf-grid-2">
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-stars"></i> Cómo trabaja MetaFlotPy</h3></div>
+    <div class="mf-card__body">
+      <div class="mf-alerta mf-alerta-info mb-2">
+        <i class="bi bi-calculator-fill"></i>
+        <div><strong>Resultados sin recargar la página.</strong> Los cálculos se envían en segundo
+             plano y los gráficos se redibujan en el sitio.</div>
+      </div>
+      <div class="mf-alerta mf-alerta-info mb-2">
+        <i class="bi bi-clipboard-check-fill"></i>
+        <div><strong>Desarrollo paso a paso.</strong> Cada módulo muestra la fórmula, la sustitución
+             numérica y la interpretación del resultado.</div>
+      </div>
+      <div class="mf-alerta mf-alerta-info mb-2">
+        <i class="bi bi-diagram-2-fill"></i>
+        <div><strong>Esquema de referencia en cada módulo.</strong> Un diagrama del equipo o del
+             circuito con las variables señaladas sobre el dibujo.</div>
+      </div>
+      <div class="mf-alerta mf-alerta-info">
+        <i class="bi bi-download"></i>
+        <div><strong>Exportación e impresión.</strong> Cualquier tabla se descarga en CSV y toda
+             página puede imprimirse o guardarse como PDF sin la barra lateral.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-keyboard"></i> Atajos y detalles útiles</h3></div>
+    <div class="mf-card__body">
+      <div class="mf-tabla-wrap">
+        <table class="mf-tabla">
+          <thead><tr><th class="mf-col-txt">Acción</th><th class="mf-col-txt">Cómo</th></tr></thead>
+          <tbody>
+            <tr><td class="mf-col-txt">Contraer o mostrar el menú lateral</td><td class="mf-col-txt"><code>Ctrl</code> + <code>B</code></td></tr>
+            <tr><td class="mf-col-txt">Cambiar entre tema claro y oscuro</td><td class="mf-col-txt">Botón <i class="bi bi-moon-stars"></i> de la barra superior</td></tr>
+            <tr><td class="mf-col-txt">Imprimir o guardar en PDF</td><td class="mf-col-txt">Botón <i class="bi bi-printer"></i> de la barra superior</td></tr>
+            <tr><td class="mf-col-txt">Cargar datos desde Excel</td><td class="mf-col-txt">Copia las columnas y pega sobre la tabla de mallas</td></tr>
+            <tr><td class="mf-col-txt">Probar un módulo sin datos propios</td><td class="mf-col-txt">Botón <i class="bi bi-magic"></i> <strong>Ejemplo</strong> de cada formulario</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mf-alerta mf-alerta-warning mt-3">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>Los resultados son estimaciones de ingeniería y deben validarse con ensayos y
+             criterio profesional antes de usarse en decisiones de operación o inversión.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

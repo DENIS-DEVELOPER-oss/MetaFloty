@@ -1,0 +1,615 @@
+{# =========================================================================
+   MetaFlotPy · Esquemas de referencia (SVG)
+   Un diagrama por módulo, adaptado al tema claro/oscuro mediante
+   las variables CSS definidas en metaflotpy.css (.mf-esquema *).
+   Uso:  {% from "_esquemas.html" import esq_tamices %} … {{ esq_tamices() }}
+   ========================================================================= #}
+
+{# ---------- Envoltorio común ---------- #}
+{% macro _tarjeta(titulo, icono, nota, leyenda) %}
+<div class="mf-card">
+  <div class="mf-card__head">
+    <h3><i class="bi {{ icono }}"></i> {{ titulo }}</h3>
+    <span class="mf-badge mf-badge-primary ms-auto">Esquema de referencia</span>
+  </div>
+  <div class="mf-card__body">
+    <div class="mf-esquema-wrap">
+      {{ caller() }}
+    </div>
+    <p class="mf-esquema-scroll"><i class="bi bi-arrow-left-right"></i> Desliza el esquema para verlo completo</p>
+    {% if nota %}<p class="mf-esquema-nota">{{ nota }}</p>{% endif %}
+    {% if leyenda %}
+    <div class="mf-esquema-leyenda">
+      {% for color, texto in leyenda %}
+      <span><i style="background: var(--mf-{{ color }})"></i>{{ texto }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+
+{# ========================= I · GRANULOMETRÍA ========================= #}
+{% macro esq_tamices() %}
+{% call _tarjeta('Serie de tamices y variables del ensayo', 'bi-funnel',
+      'Cada malla retiene el material mayor que su abertura dᵢ. El peso retenido wᵢ define %Rᵢ, y el acumulado pasante %Pᵢ construye la curva granulométrica.',
+      [('accent','Material retenido'), ('primary','Flujo de finos')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 300" role="img" aria-label="Columna de tamices con material retenido en cada malla">
+  <!-- Alimentación -->
+  <path class="eq-flecha-ac2" d="M 150 18 L 150 40"/>
+  <text class="eq-rot" x="160" y="26">Muestra</text>
+  <text class="eq-var2" x="160" y="38">W total</text>
+
+  {% for i in range(5) %}
+    {% set y = 44 + i * 40 %}
+    {% set anchos = [46, 36, 28, 20, 13] %}
+    <!-- Marco del tamiz -->
+    <rect class="eq-caja" x="70" y="{{ y }}" width="180" height="32" rx="3"/>
+    <!-- Malla -->
+    <line x1="74" y1="{{ y + 26 }}" x2="246" y2="{{ y + 26 }}"
+          style="stroke: var(--mf-border-strong); stroke-width:1.4; stroke-dasharray: 3 2"/>
+    <!-- Material retenido -->
+    <rect class="eq-mineral" x="{{ 90 + i * 12 }}" y="{{ y + 16 }}" width="{{ anchos[i] * 2 }}" height="10" rx="2"/>
+    <!-- Rótulos -->
+    <text class="eq-var" x="258" y="{{ y + 16 }}">d{{ ['₁','₂','₃','₄','₅'][i] }}</text>
+    <text class="eq-sub" x="258" y="{{ y + 27 }}">w{{ ['₁','₂','₃','₄','₅'][i] }} retenido</text>
+    <text class="eq-sub" x="14" y="{{ y + 22 }}">Malla {{ i + 1 }}</text>
+  {% endfor %}
+
+  <!-- Fondo (ciego) -->
+  <rect class="eq-caja-ac2" x="70" y="244" width="180" height="30" rx="3"/>
+  <text class="eq-rot" x="128" y="263">Fondo</text>
+  <text class="eq-sub" x="258" y="263">pasante final</text>
+
+  <!-- Flujo descendente -->
+  <path class="eq-flecha-act" d="M 160 78 L 160 240" style="opacity:.4"/>
+
+  <!-- Panel de fórmulas -->
+  <line class="eq-guia" x1="360" y1="30" x2="360" y2="278"/>
+  <text class="eq-rot" x="382" y="52">Cálculos por malla</text>
+  <text class="eq-sub" x="382" y="76">% Retenido</text>
+  <text class="eq-var" x="382" y="92">%Rᵢ = (wᵢ / W) × 100</text>
+  <text class="eq-sub" x="382" y="120">% Retenido acumulado</text>
+  <text class="eq-var" x="382" y="136">%Aᵢ = Σ %Rⱼ  (j ≤ i)</text>
+  <text class="eq-sub" x="382" y="164">% Pasante acumulado</text>
+  <text class="eq-var" x="382" y="180">%Pᵢ = 100 − %Aᵢ</text>
+  <text class="eq-sub" x="382" y="208">Modelo GGS</text>
+  <text class="eq-var2" x="382" y="224">%P = 100 (d / k)ⁿ</text>
+  <text class="eq-sub" x="382" y="252">Modelo Rosin-Rammler</text>
+  <text class="eq-var2" x="382" y="268">R(d) = 100 e^[−(d/d₀)ⁿ]</text>
+</svg>
+{% endcall %}
+{% endmacro %}
+
+
+{# ========================= II · BALANCE DE MASA ========================= #}
+{% macro esq_circuito(tipo='directo') %}
+{% set titulos = {
+    'directo': 'Circuito cerrado directo — F = P + R',
+    'inverso': 'Circuito cerrado inverso — F + R = P',
+    'sabc1':   'Circuito SABC-1 — SAG + bolas con clasificación',
+    'sabc2':   'Circuito SABC-2 — SAG con rechazo directo a bolas'
+} %}
+{% call _tarjeta(titulos.get(tipo, titulos['directo']), 'bi-diagram-3',
+      'El diagrama muestra los flujos másicos del circuito. La carga circulante (CC) mide cuánto material se recircula respecto al producto o a la alimentación fresca.',
+      [('primary','Flujo principal'), ('accent','Carga circulante')]) %}
+
+{% if tipo == 'directo' %}
+<svg class="mf-esquema" viewBox="0 0 660 240" role="img" aria-label="Diagrama de circuito cerrado directo de molienda">
+  <text class="eq-var" x="18" y="86">F</text>
+  <text class="eq-sub" x="14" y="100">alimentación</text>
+  <path class="eq-flecha-act" d="M 46 80 L 108 80"/>
+
+  <rect class="eq-caja-act" x="110" y="52" width="120" height="56" rx="8"/>
+  <text class="eq-rot" x="140" y="78">Molino</text>
+  <text class="eq-sub" x="132" y="93">reducción de tamaño</text>
+
+  <path class="eq-flecha-act" d="M 232 80 L 300 80"/>
+  <text class="eq-sub" x="244" y="72">descarga</text>
+
+  <polygon class="eq-caja-act" points="302,52 412,52 382,108 332,108"/>
+  <text class="eq-rot" x="322" y="80">Clasificador</text>
+
+  <path class="eq-flecha-act" d="M 414 80 L 500 80"/>
+  <text class="eq-var" x="510" y="86">P</text>
+  <text class="eq-sub" x="504" y="100">producto fino</text>
+
+  <!-- Recirculación -->
+  <path class="eq-flecha-ac2" d="M 357 110 L 357 172 L 170 172 L 170 112"/>
+  <text class="eq-var2" x="248" y="188">R · carga circulante</text>
+
+  <line class="eq-guia" x1="40" y1="212" x2="620" y2="212"/>
+  <text class="eq-var" x="40" y="230">Balance: F = P + R</text>
+  <text class="eq-var2" x="330" y="230">CC = (R / P) × 100 %</text>
+</svg>
+
+{% elif tipo == 'inverso' %}
+<svg class="mf-esquema" viewBox="0 0 660 240" role="img" aria-label="Diagrama de circuito cerrado inverso de molienda">
+  <text class="eq-var" x="18" y="86">F</text>
+  <text class="eq-sub" x="14" y="100">alimentación</text>
+  <path class="eq-flecha-act" d="M 46 80 L 110 80"/>
+
+  <polygon class="eq-caja-act" points="112,52 222,52 192,108 142,108"/>
+  <text class="eq-rot" x="130" y="80">Clasificador</text>
+
+  <path class="eq-flecha-ac2" d="M 167 110 L 167 168 L 300 168 L 300 116"/>
+  <text class="eq-var2" x="180" y="184">R · gruesos al molino</text>
+
+  <rect class="eq-caja-act" x="240" y="58" width="120" height="56" rx="8"/>
+  <text class="eq-rot" x="272" y="84">Molino</text>
+  <text class="eq-sub" x="258" y="99">molienda de gruesos</text>
+
+  <path class="eq-flecha-act" d="M 362 86 L 470 86"/>
+  <text class="eq-var" x="482" y="92">P</text>
+  <text class="eq-sub" x="474" y="106">producto molido</text>
+
+  <path class="eq-flecha-act" d="M 224 66 L 470 40 " style="opacity:.55"/>
+  <text class="eq-sub" x="300" y="42">finos (by-pass)</text>
+
+  <line class="eq-guia" x1="40" y1="206" x2="620" y2="206"/>
+  <text class="eq-var" x="40" y="226">Balance: F + R = P</text>
+  <text class="eq-var2" x="330" y="226">CC = (R / F) × 100 %</text>
+</svg>
+
+{% elif tipo == 'sabc1' %}
+<svg class="mf-esquema" viewBox="0 0 680 250" role="img" aria-label="Diagrama de circuito SABC-1">
+  <text class="eq-var" x="14" y="70">F</text>
+  <text class="eq-sub" x="8" y="84">mineral nuevo</text>
+  <path class="eq-flecha-act" d="M 40 64 L 92 64"/>
+
+  <rect class="eq-caja-act" x="94" y="38" width="104" height="52" rx="8"/>
+  <text class="eq-rot" x="126" y="60">Molino SAG</text>
+  <text class="eq-sub" x="118" y="76">F = S</text>
+
+  <path class="eq-flecha-act" d="M 200 64 L 258 64"/>
+  <text class="eq-var" x="222" y="56">S</text>
+
+  <rect class="eq-caja-act" x="260" y="38" width="104" height="52" rx="8"/>
+  <text class="eq-rot" x="277" y="60">Molino bolas</text>
+  <text class="eq-sub" x="278" y="76">S + R = B</text>
+
+  <path class="eq-flecha-act" d="M 366 64 L 420 64"/>
+  <text class="eq-var" x="388" y="56">B</text>
+
+  <polygon class="eq-caja-act" points="422,38 532,38 502,94 452,94"/>
+  <text class="eq-rot" x="440" y="66">Clasificador</text>
+
+  <path class="eq-flecha-act" d="M 534 64 L 606 64"/>
+  <text class="eq-var" x="616" y="70">P</text>
+  <text class="eq-sub" x="606" y="84">producto</text>
+
+  <path class="eq-flecha-ac2" d="M 477 96 L 477 162 L 312 162 L 312 94"/>
+  <text class="eq-var2" x="356" y="178">R · carga circulante</text>
+
+  <line class="eq-guia" x1="30" y1="200" x2="650" y2="200"/>
+  <text class="eq-var" x="30" y="220">Global: F = P + R</text>
+  <text class="eq-var" x="240" y="220">SAG: F = S</text>
+  <text class="eq-var" x="380" y="220">Bolas: S + R = B</text>
+  <text class="eq-var2" x="30" y="240">Clasificador: B = P + R</text>
+</svg>
+
+{% else %}
+<svg class="mf-esquema" viewBox="0 0 680 240" role="img" aria-label="Diagrama de circuito SABC-2">
+  <text class="eq-var" x="14" y="70">F</text>
+  <text class="eq-sub" x="8" y="84">mineral nuevo</text>
+  <path class="eq-flecha-act" d="M 40 64 L 100 64"/>
+
+  <rect class="eq-caja-act" x="102" y="38" width="116" height="52" rx="8"/>
+  <text class="eq-rot" x="128" y="60">Molino SAG</text>
+  <text class="eq-sub" x="142" y="76">F = S</text>
+
+  <path class="eq-flecha-act" d="M 220 64 L 300 64"/>
+  <text class="eq-var" x="250" y="56">S</text>
+
+  <polygon class="eq-caja-act" points="302,38 412,38 382,94 332,94"/>
+  <text class="eq-rot" x="316" y="66">Harnero</text>
+
+  <path class="eq-flecha-act" d="M 414 64 L 560 64"/>
+  <text class="eq-var" x="572" y="70">P</text>
+  <text class="eq-sub" x="560" y="84">producto final</text>
+
+  <path class="eq-flecha-ac2" d="M 357 96 L 357 150 L 470 150 L 470 118"/>
+  <text class="eq-var2" x="366" y="166">R · rechazo grueso</text>
+
+  <rect class="eq-caja-ac2" x="412" y="120" width="118" height="48" rx="8"/>
+  <text class="eq-rot" x="432" y="140">Molino bolas</text>
+  <text class="eq-sub" x="448" y="156">pebble crusher</text>
+
+  <path class="eq-flecha-act" d="M 532 144 L 590 144 L 590 78" style="opacity:.6"/>
+
+  <line class="eq-guia" x1="30" y1="196" x2="650" y2="196"/>
+  <text class="eq-var" x="30" y="216">Global: F = P</text>
+  <text class="eq-var" x="200" y="216">SAG: F = S</text>
+  <text class="eq-var2" x="360" y="216">Harnero: S = P + R</text>
+</svg>
+{% endif %}
+{% endcall %}
+{% endmacro %}
+
+
+{# ===================== III · BALANCE METALÚRGICO ===================== #}
+{% macro esq_balance_met(n_conc=1) %}
+{% call _tarjeta('Balance metalúrgico — flujos, leyes y ley de cabeza', 'bi-graph-up-arrow',
+      'Todo el metal que entra con la cabeza debe salir en los concentrados o en el relave. Recombinar los productos devuelve la ley de cabeza calculada, que se contrasta con la ensayada.',
+      [('primary','Alimentación'), ('success','Concentrado'), ('danger','Relave')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 {{ 212 + n_conc * 22 }}" role="img" aria-label="Diagrama de balance metalúrgico con ley de cabeza ensayada y calculada">
+  <text class="eq-var" x="16" y="84">F , f</text>
+  <text class="eq-sub" x="6" y="98">masa y ley</text>
+  <text class="eq-sub" x="6" y="110">de cabeza</text>
+  <path class="eq-flecha-act" d="M 62 78 L 150 78"/>
+
+  <rect class="eq-caja-act" x="152" y="42" width="150" height="74" rx="9"/>
+  <text class="eq-rot" x="176" y="72">Planta de</text>
+  <text class="eq-rot" x="176" y="88">concentración</text>
+  <text class="eq-sub" x="176" y="104">flotación / gravimetría</text>
+
+  {% for i in range(n_conc) %}
+    {% set y = 52 + i * 30 %}
+    <path d="M 304 78 L 400 {{ y }} L 452 {{ y }}"
+          style="stroke: var(--mf-success); stroke-width:2; fill:none; marker-end:url(#mf-punta-act)"/>
+    <text x="462" y="{{ y + 5 }}" class="eq-var" style="fill: var(--mf-success)">
+      C{{ ['₁','₂','₃'][i] if n_conc > 1 else '' }} , c{{ ['₁','₂','₃'][i] if n_conc > 1 else '' }}
+    </text>
+    <text x="462" y="{{ y + 17 }}" class="eq-sub">concentrado {{ i + 1 if n_conc > 1 else '' }}</text>
+  {% endfor %}
+
+  {% set yt = 52 + n_conc * 30 + 14 %}
+  <path d="M 304 82 L 400 {{ yt }} L 452 {{ yt }}"
+        style="stroke: var(--mf-danger); stroke-width:2; fill:none; marker-end:url(#mf-punta)"/>
+  <text x="462" y="{{ yt + 5 }}" class="eq-var" style="fill: var(--mf-danger)">T , t</text>
+  <text x="462" y="{{ yt + 17 }}" class="eq-sub">relave</text>
+
+  <line class="eq-guia" x1="20" y1="{{ yt + 40 }}" x2="640" y2="{{ yt + 40 }}"/>
+  <text class="eq-var" x="20" y="{{ yt + 60 }}">Masa: F = ΣC + T</text>
+  <text class="eq-var" x="220" y="{{ yt + 60 }}">Metal: F·f = ΣC·c + T·t</text>
+
+  <text class="eq-sub" x="20" y="{{ yt + 82 }}">Ley de cabeza calculada, recombinando los productos</text>
+  <text class="eq-var2" x="20" y="{{ yt + 98 }}">f_calc = (ΣC·c + T·t) / F</text>
+  <text class="eq-sub" x="300" y="{{ yt + 98 }}">se contrasta con la ley de cabeza ensayada</text>
+
+  <text class="eq-var2" x="20" y="{{ yt + 122 }}">R = (ΣC·c)/(F·f) × 100 %</text>
+  <text class="eq-var2" x="260" y="{{ yt + 122 }}">K = F / ΣC</text>
+  <text class="eq-sub" x="380" y="{{ yt + 122 }}">K = razón de concentración</text>
+</svg>
+{% endcall %}
+{% endmacro %}
+
+
+{# ===================== IV · MOLINOS ===================== #}
+{% macro esq_molino(tipo='bolas') %}
+{% set es_barras = tipo == 'barras' %}
+{% call _tarjeta(('Molino de barras — geometría y carga' if es_barras else 'Molino de bolas — geometría y carga'), 'bi-record-circle',
+      'La ecuación de Bond fija la potencia que exige la molienda; la ecuación de potencia del molino devuelve el diámetro D que es capaz de entregarla con la relación L/D elegida.',
+      [('primary','Cuerpo del molino'), ('accent','Carga moledora')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 250" role="img" aria-label="Corte esquemático de molino con carga moledora">
+  <!-- Vista longitudinal -->
+  <text class="eq-sub" x="60" y="26">Vista longitudinal</text>
+  <rect class="eq-caja-act" x="60" y="40" width="230" height="96" rx="14"/>
+  <!-- Nivel de carga -->
+  <path d="M 64 108 Q 175 138 286 108 L 286 132 Q 175 140 64 132 Z" class="eq-mineral"/>
+  {% if es_barras %}
+    {% for i in range(7) %}
+      <rect x="{{ 76 + i * 30 }}" y="112" width="22" height="6" rx="3"
+            style="fill: var(--mf-accent); opacity:.85"/>
+    {% endfor %}
+  {% else %}
+    {% for i in range(9) %}
+      <circle cx="{{ 80 + i * 24 }}" cy="{{ 118 + (3 if i % 2 else 0) }}" r="6"
+              style="fill: var(--mf-accent); opacity:.85"/>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Cotas -->
+  <path class="eq-flecha" d="M 60 152 L 290 152" style="marker-start:url(#mf-punta)"/>
+  <text class="eq-var" x="170" y="168">L</text>
+  <path class="eq-flecha" d="M 44 40 L 44 136" style="marker-start:url(#mf-punta)"/>
+  <text class="eq-var" x="28" y="92">D</text>
+
+  <!-- Entrada / salida -->
+  <path class="eq-flecha-act" d="M 18 68 L 56 68"/>
+  <text class="eq-sub" x="16" y="60">F80</text>
+  <path class="eq-flecha-act" d="M 292 68 L 326 68"/>
+  <text class="eq-sub" x="296" y="60">P80</text>
+  <text class="eq-sub" x="112" y="186">J · fracción de llenado = {{ '0,40' if es_barras else '0,35' }} típica</text>
+  <text class="eq-sub" x="112" y="200">Nc · fracción de la velocidad crítica</text>
+
+  <!-- Panel de fórmulas -->
+  <line class="eq-guia" x1="348" y1="24" x2="348" y2="228"/>
+  <text class="eq-rot" x="366" y="42">Secuencia de cálculo</text>
+
+  <text class="eq-sub" x="366" y="66">1 · Consumo específico de Bond (kWh/t)</text>
+  <text class="eq-var" x="366" y="82">W = 10·Wi·(1/√P80 − 1/√F80)</text>
+
+  <text class="eq-sub" x="366" y="110">2 · Potencia al eje (kW)</text>
+  <text class="eq-var" x="366" y="126">P = W · F</text>
+
+  <text class="eq-sub" x="366" y="154">3 · Potencia que entrega el molino</text>
+  <text class="eq-var" x="366" y="170">P = 12,262·D^2,3·L·ρb·J·(1−0,937J)·Nc</text>
+
+  <text class="eq-sub" x="366" y="196">4 · Con L = (L/D)·D se despeja el diámetro</text>
+  <text class="eq-var2" x="366" y="212">D = [P / (12,262·(L/D)·ρb·J·…)]^(1/3,3)</text>
+
+  <text class="eq-sub" x="366" y="234">Rango usual L/D: {{ '1,4 – 2,0 (barras)' if es_barras else '1,0 – 1,5 (bolas)' }}</text>
+</svg>
+{% endcall %}
+{% endmacro %}
+
+
+{# ===================== IV · HIDROCICLÓN ===================== #}
+{% macro esq_hidrociclon() %}
+{% call _tarjeta('Hidrociclón — partes y flujos', 'bi-filter-circle',
+      'El corte d₅₀c es el tamaño con 50 % de probabilidad de reportar al underflow. Dc, Di, Do y Du se dimensionan como proporciones del diámetro del ciclón.',
+      [('primary','Overflow (finos)'), ('accent','Underflow (gruesos)')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 292" role="img" aria-label="Corte de un hidrociclón mostrando alimentación, overflow y underflow">
+  <!-- Salida de finos por el vórtex -->
+  <path class="eq-flecha-act" d="M 163 30 L 163 8"/>
+  <text class="eq-var" x="180" y="16">Do · overflow</text>
+  <text class="eq-sub" x="180" y="28">finos, d &lt; d₅₀c</text>
+
+  <!-- Cuerpo cilíndrico -->
+  <rect class="eq-caja-act" x="112" y="40" width="104" height="66" rx="2"/>
+  <!-- Vortex finder, sumergido en el cuerpo -->
+  <rect class="eq-caja" x="150" y="28" width="26" height="52" rx="3"/>
+
+  <!-- Cono -->
+  <polygon class="eq-caja-act" points="112,106 216,106 176,222 152,222"/>
+  <!-- Ápex -->
+  <rect class="eq-caja-ac2" x="152" y="222" width="24" height="24" rx="2"/>
+  <path class="eq-flecha-ac2" d="M 164 248 L 164 274"/>
+  <text class="eq-var2" x="182" y="260">Du · underflow</text>
+  <text class="eq-sub" x="182" y="272">gruesos, d &gt; d₅₀c</text>
+
+  <!-- Alimentación tangencial -->
+  <path class="eq-flecha-act" d="M 34 60 L 110 60"/>
+  <text class="eq-var" x="30" y="50">Q · Di</text>
+  <text class="eq-sub" x="14" y="74">alimentación</text>
+
+  <!-- Espiral descendente del flujo -->
+  <path class="eq-guia" d="M 130 92 Q 200 108 140 128 Q 190 148 148 170 Q 180 188 158 210"/>
+
+  <!-- Cota del diámetro del cuerpo, dentro del cilindro -->
+  <text class="eq-var" x="150" y="92">Dc</text>
+  <path class="eq-flecha" d="M 118 98 L 210 98" style="marker-start:url(#mf-punta)"/>
+
+  <!-- Panel -->
+  <line class="eq-guia" x1="330" y1="20" x2="330" y2="272"/>
+  <text class="eq-rot" x="352" y="40">Criterios de dimensionamiento</text>
+
+  <text class="eq-sub" x="352" y="66">Corte corregido (Plitt / Bradley)</text>
+  <text class="eq-var" x="352" y="82">d₅₀c ∝ Dc^0,46 · Q^−0,45</text>
+
+  <text class="eq-sub" x="352" y="110">Proporciones típicas</text>
+  <text class="eq-var" x="352" y="126">Di ≈ 0,15·Dc</text>
+  <text class="eq-var" x="352" y="142">Do ≈ 0,20–0,35·Dc</text>
+  <text class="eq-var" x="352" y="158">Du ≈ 0,10–0,20·Dc</text>
+
+  <text class="eq-sub" x="352" y="186">Velocidad de sedimentación (Stokes)</text>
+  <text class="eq-var2" x="352" y="202">v = g·d²·(ρs − ρl) / (18·μ)</text>
+
+  <text class="eq-sub" x="352" y="230">Número de ciclones</text>
+  <text class="eq-var2" x="352" y="246">N = Q_total / Q_unitario</text>
+</svg>
+{% endcall %}
+{% endmacro %}
+
+
+{# ===================== IV · SEPARADORES ===================== #}
+{% macro esq_separador() %}
+{% call _tarjeta('Concentración gravimétrica — criterio de separación', 'bi-layers-half',
+      'El criterio de concentración CC compara las densidades del mineral pesado, la ganga y el fluido. Cuanto mayor es CC, más fácil resulta la separación por gravedad.',
+      [('accent','Mineral pesado'), ('primary','Ganga liviana')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 250" role="img" aria-label="Esquema de separación gravimétrica en jig y espiral">
+  <!-- Jig -->
+  <text class="eq-sub" x="28" y="24">Jig · lecho pulsante</text>
+  <rect class="eq-caja-act" x="28" y="34" width="150" height="92" rx="6"/>
+  <line x1="28" y1="96" x2="178" y2="96" style="stroke: var(--mf-border-strong); stroke-width:1.2; stroke-dasharray:3 2"/>
+  {% for i in range(9) %}
+    <circle cx="{{ 40 + i * 16 }}" cy="{{ 108 }}" r="5" style="fill: var(--mf-accent); opacity:.85"/>
+  {% endfor %}
+  {% for i in range(8) %}
+    <circle cx="{{ 44 + i * 17 }}" cy="{{ 62 + (8 if i % 2 else 0) }}" r="6"
+            style="fill: var(--mf-primary); opacity:.45"/>
+  {% endfor %}
+  <path class="eq-flecha" d="M 103 138 L 103 126" style="stroke: var(--mf-info)"/>
+  <text class="eq-sub" x="60" y="152">pulsación de agua</text>
+  <text class="eq-sub" x="186" y="66">liviano → relave</text>
+  <text class="eq-sub" x="186" y="112">pesado → concentrado</text>
+
+  <!-- Espiral -->
+  <text class="eq-sub" x="300" y="24">Espiral · fuerza centrífuga</text>
+  <g transform="translate(300,30)">
+    {% for i in range(5) %}
+      <ellipse cx="60" cy="{{ 18 + i * 22 }}" rx="{{ 56 - i * 5 }}" ry="{{ 13 - i }}"
+               style="fill:none; stroke: var(--mf-border-strong); stroke-width:1.4"/>
+      <circle cx="{{ 10 + i * 5 }}" cy="{{ 18 + i * 22 }}" r="4" style="fill: var(--mf-accent); opacity:.9"/>
+      <circle cx="{{ 110 - i * 5 }}" cy="{{ 18 + i * 22 }}" r="4" style="fill: var(--mf-primary); opacity:.5"/>
+    {% endfor %}
+  </g>
+  <text class="eq-sub" x="272" y="160">interior: pesado</text>
+  <text class="eq-sub" x="392" y="160">exterior: liviano</text>
+
+  <!-- Panel -->
+  <line class="eq-guia" x1="470" y1="20" x2="470" y2="232"/>
+  <text class="eq-rot" x="490" y="40">Criterio de concentración</text>
+  <text class="eq-var" x="490" y="62">CC = (ρ_pesado − ρ_fluido) /</text>
+  <text class="eq-var" x="510" y="78">(ρ_liviano − ρ_fluido)</text>
+
+  <text class="eq-sub" x="490" y="106">CC &gt; 2,5 → separación fácil</text>
+  <text class="eq-sub" x="490" y="124">1,75 – 2,5 → hasta ~0,1 mm</text>
+  <text class="eq-sub" x="490" y="142">1,50 – 1,75 → hasta ~1,7 mm</text>
+  <text class="eq-sub" x="490" y="160">CC &lt; 1,25 → no viable</text>
+
+  <text class="eq-sub" x="490" y="192">Velocidad terminal (Stokes)</text>
+  <text class="eq-var2" x="490" y="208">v = g·d²·Δρ / (18·μ)</text>
+  <text class="eq-sub" x="490" y="226">Δρ = ρ_sólido − ρ_fluido</text>
+  <text class="eq-sub" x="490" y="240">válida para Re &lt; 1 (partículas finas)</text>
+</svg>
+{% endcall %}
+{% endmacro %}
+
+
+{# ===================== IV · ALMACENAMIENTO ===================== #}
+{% macro esq_silo() %}
+{% call _tarjeta('Silo cilíndrico con tolva cónica — geometría', 'bi-inboxes',
+      'El volumen útil determina la capacidad en toneladas según la densidad aparente del material. El ángulo de la tolva debe superar el ángulo de reposo para asegurar flujo.',
+      [('accent','Material almacenado'), ('primary','Estructura')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 306" role="img" aria-label="Corte de un silo cilíndrico con tolva cónica y sus cotas">
+  <!-- Carga por el techo -->
+  <path class="eq-flecha-ac2" d="M 244 14 L 244 42"/>
+  <text class="eq-sub" x="254" y="30">carga</text>
+
+  <!-- Cuerpo cilíndrico -->
+  <rect class="eq-caja-act" x="180" y="46" width="128" height="130" rx="2"/>
+  <!-- Material almacenado -->
+  <path class="eq-mineral" d="M 184 86 L 304 86 L 304 172 L 184 172 Z"/>
+  <path class="eq-mineral" d="M 184 86 Q 244 72 304 86 L 304 94 Q 244 80 184 94 Z"/>
+
+  <!-- Tolva cónica -->
+  <polygon class="eq-caja-act" points="180,176 308,176 260,242 228,242"/>
+  <path class="eq-mineral" d="M 184 176 L 304 176 L 258 238 L 230 238 Z" style="opacity:.35"/>
+
+  <!-- Boca de descarga -->
+  <rect class="eq-caja" x="228" y="242" width="32" height="14" rx="2"/>
+  <path class="eq-flecha-ac2" d="M 244 258 L 244 276"/>
+  <text class="eq-sub" x="266" y="272">descarga</text>
+
+  <!-- Cota de altura -->
+  <path class="eq-flecha" d="M 152 46 L 152 176" style="marker-start:url(#mf-punta)"/>
+  <text class="eq-var" x="134" y="115">H</text>
+
+  <!-- Cota de diámetro, con líneas de extensión bajo el silo -->
+  <path class="eq-guia" d="M 180 178 L 180 296 M 308 178 L 308 296"/>
+  <path class="eq-flecha" d="M 180 292 L 308 292" style="marker-start:url(#mf-punta)"/>
+  <text class="eq-var" x="237" y="286">D</text>
+
+  <!-- Ángulo de la tolva -->
+  <path class="eq-guia" d="M 228 242 L 228 196 M 228 208 A 34 34 0 0 0 240 228"/>
+  <path class="eq-guia" d="M 150 226 L 222 232"/>
+  <text class="eq-var2" x="14" y="222">θ · ángulo de tolva</text>
+  <text class="eq-sub" x="14" y="236">debe exceder al</text>
+  <text class="eq-sub" x="14" y="248">ángulo de reposo</text>
+
+  <!-- Panel -->
+  <line class="eq-guia" x1="382" y1="20" x2="382" y2="286"/>
+  <text class="eq-rot" x="400" y="40">Cálculo de capacidad</text>
+
+  <text class="eq-sub" x="400" y="68">Área de la sección</text>
+  <text class="eq-var" x="400" y="84">A = π·D² / 4</text>
+
+  <text class="eq-sub" x="400" y="114">Volumen del cilindro</text>
+  <text class="eq-var" x="400" y="130">V = A · H = (π/4)·D²·H</text>
+
+  <text class="eq-sub" x="400" y="160">Capacidad másica</text>
+  <text class="eq-var" x="400" y="176">M = V_útil · ρ_aparente</text>
+
+  <text class="eq-sub" x="400" y="206">Autonomía operativa</text>
+  <text class="eq-var2" x="400" y="222">t = M / (tratamiento t/h)</text>
+
+  <text class="eq-sub" x="400" y="252">Presión de pared</text>
+  <text class="eq-var" x="400" y="268">Janssen (silos esbeltos, H/D ≥ 1,5)</text>
+</svg>
+{% endcall %}
+{% endmacro %}
+
+
+{# ===================== V · VALORIZACIÓN ===================== #}
+{% macro esq_valorizacion() %}
+{% call _tarjeta('Cadena de valor del concentrado', 'bi-cash-coin',
+      'Del valor del metal pagable se descuentan maquila, refinación, penalidades y flete hasta llegar al retorno neto de fundición (NSR) que realmente cobra el productor.',
+      [('success','Valor del metal pagable'), ('danger','Deducciones'), ('primary','Retorno neto')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 244" role="img"
+     aria-label="Cascada del valor bruto al retorno neto de fundición de un concentrado">
+  <!-- Valor bruto -->
+  <rect x="36" y="40" width="62" height="130" rx="4" style="fill: var(--mf-success); opacity:.8"/>
+  <text class="eq-rot" x="34" y="188">Valor bruto</text>
+  <text class="eq-sub" x="34" y="201">metal pagable</text>
+
+  <!-- Maquila -->
+  <path class="eq-guia" d="M 98 40 L 110 40"/>
+  <rect x="110" y="40" width="52" height="30" rx="4" style="fill: var(--mf-danger); opacity:.75"/>
+  <text class="eq-rot" x="112" y="188">TC</text>
+  <text class="eq-sub" x="112" y="201">maquila</text>
+
+  <!-- Refinación -->
+  <path class="eq-guia" d="M 162 70 L 176 70"/>
+  <rect x="176" y="70" width="52" height="14" rx="4" style="fill: var(--mf-danger); opacity:.6"/>
+  <text class="eq-rot" x="178" y="188">RC</text>
+  <text class="eq-sub" x="178" y="201">refinación</text>
+
+  <!-- Penalidades -->
+  <path class="eq-guia" d="M 228 84 L 242 84"/>
+  <rect x="242" y="84" width="52" height="12" rx="4" style="fill: var(--mf-warning); opacity:.8"/>
+  <text class="eq-rot" x="244" y="188">Penal.</text>
+  <text class="eq-sub" x="244" y="201">impurezas</text>
+
+  <!-- Retorno neto -->
+  <path class="eq-guia" d="M 294 96 L 308 96"/>
+  <rect x="308" y="96" width="62" height="74" rx="4" style="fill: var(--mf-primary); opacity:.85"/>
+  <text class="eq-rot" x="308" y="188">NSR</text>
+  <text class="eq-sub" x="300" y="201">retorno neto</text>
+
+  <!-- Línea base -->
+  <line x1="24" y1="170" x2="382" y2="170" style="stroke: var(--mf-border-strong); stroke-width:1.4"/>
+
+  <!-- Panel -->
+  <line class="eq-guia" x1="400" y1="20" x2="400" y2="224"/>
+  <text class="eq-rot" x="418" y="40">Secuencia de la liquidación</text>
+
+  <text class="eq-sub" x="418" y="66">Tonelaje seco facturable</text>
+  <text class="eq-var" x="418" y="82">dmt = wmt × (1 − humedad/100)</text>
+
+  <text class="eq-sub" x="418" y="110">Metal base pagable</text>
+  <text class="eq-var" x="418" y="126">mín(ley × %pagable, ley − deducción)</text>
+
+  <text class="eq-sub" x="418" y="154">Metales preciosos</text>
+  <text class="eq-var" x="418" y="170">oz = dmt × g/t pagables ÷ 31,1035</text>
+
+  <text class="eq-sub" x="418" y="198">Retorno neto de fundición</text>
+  <text class="eq-var2" x="418" y="214">NSR = bruto − deducciones</text>
+  <text class="eq-sub" x="418" y="230">deducciones = TC + RC + penalidades + flete</text>
+</svg>
+{% endcall %}
+{% endmacro %}
+
+
+{# ===================== HERRAMIENTAS · PULPA ===================== #}
+{% macro esq_pulpa() %}
+{% call _tarjeta('Relaciones de una pulpa mineral', 'bi-droplet-half',
+      'Las variables de una pulpa están ligadas entre sí: conocidos el porcentaje de sólidos y la gravedad específica del mineral, quedan definidas la densidad y la dilución.',
+      [('accent','Sólidos'), ('info','Agua')]) %}
+<svg class="mf-esquema" viewBox="0 0 660 230" role="img" aria-label="Esquema de una pulpa con sólidos y agua y sus relaciones">
+  <!-- Recipiente -->
+  <path class="eq-caja-act" d="M 46 34 L 46 176 Q 46 190 60 190 L 186 190 Q 200 190 200 176 L 200 34"/>
+  <!-- Agua -->
+  <path d="M 50 70 L 196 70 L 196 176 Q 196 186 186 186 L 60 186 Q 50 186 50 176 Z"
+        style="fill: var(--mf-info); opacity:.18"/>
+  <!-- Sólidos -->
+  {% for i in range(16) %}
+    <circle cx="{{ 62 + (i % 6) * 24 }}" cy="{{ 92 + (i // 6) * 30 }}" r="{{ 4 + (i % 3) }}"
+            style="fill: var(--mf-accent); opacity:.8"/>
+  {% endfor %}
+  <line x1="50" y1="70" x2="196" y2="70" style="stroke: var(--mf-info); stroke-width:1.6"/>
+  <text class="eq-sub" x="208" y="60">nivel de pulpa</text>
+  <text class="eq-sub" x="208" y="112">sólidos suspendidos</text>
+  <text class="eq-var2" x="208" y="128">Gs · gravedad esp.</text>
+  <text class="eq-sub" x="52" y="26">1 litro de pulpa</text>
+
+  <!-- Panel -->
+  <line class="eq-guia" x1="368" y1="20" x2="368" y2="212"/>
+  <text class="eq-rot" x="388" y="40">Relaciones fundamentales</text>
+
+  <text class="eq-sub" x="388" y="66">Densidad de pulpa (g/cm³)</text>
+  <text class="eq-var" x="388" y="82">ρp = 100 / [%S/Gs + (100−%S)]</text>
+
+  <text class="eq-sub" x="388" y="110">Dilución (agua : sólido)</text>
+  <text class="eq-var" x="388" y="126">Dil = (100 − %S) / %S</text>
+
+  <text class="eq-sub" x="388" y="154">Sólidos por litro (g/L)</text>
+  <text class="eq-var" x="388" y="170">Cs = ρp · (%S/100) · 1000</text>
+
+  <text class="eq-sub" x="388" y="198">% sólidos en volumen</text>
+  <text class="eq-var2" x="388" y="212">%Sv = Cs / (Gs · 10)</text>
+</svg>
+{% endcall %}
+{% endmacro %}

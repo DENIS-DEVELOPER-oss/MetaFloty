@@ -1,0 +1,53 @@
+# Servicio systemd para MetaFlotPy
+#
+#   sudo cp metaflotpy.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now metaflotpy
+#
+# Ajusta las rutas si no instalas en /opt/metaflotpy.
+
+[Unit]
+Description=MetaFlotPy — plataforma de cálculo metalúrgico
+Documentation=https://github.com/tu-organizacion/metaflotpy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=metaflotpy
+Group=metaflotpy
+
+WorkingDirectory=/opt/metaflotpy/app
+Environment="PATH=/opt/metaflotpy/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+# Clave de sesión y demás variables (permisos 600, propiedad de root)
+EnvironmentFile=/etc/metaflotpy.env
+
+ExecStart=/opt/metaflotpy/venv/bin/gunicorn \
+    --config /opt/metaflotpy/app/despliegue/linux/gunicorn.conf.py \
+    wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=20
+
+# --- Endurecimiento ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+# La aplicación no escribe en disco; si algún día lo hiciera, añade la ruta aquí:
+# ReadWritePaths=/var/lib/metaflotpy
+
+# Límite de memoria: 3 workers × ~300 MB + margen
+MemoryMax=1500M
+
+[Install]
+WantedBy=multi-user.target

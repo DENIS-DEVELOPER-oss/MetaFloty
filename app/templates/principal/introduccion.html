@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block titulo %}Guía de uso · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Guía de uso{% endblock %}
+{% block ruta %}Qué calcula cada módulo y cómo interpretarlo{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-book"></i> Documentación</div>
+    <h1>Guía de uso de MetaFlotPy</h1>
+    <p>Qué resuelve cada módulo, qué datos necesita, qué modelo aplica y cómo leer los resultados.
+       Todos los módulos comparten la misma mecánica: ingresas los datos, la aplicación calcula sin
+       recargar la página y muestra el desarrollo completo junto a los gráficos.</p>
+  </div>
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head"><h2><i class="bi bi-signpost-split"></i> Cómo usar cualquier módulo</h2></div>
+  <div class="mf-card__body">
+    <div class="mf-grid mf-grid-2">
+      <div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">1</span>
+          <span class="mf-paso__txt" style="font-family: inherit">
+            <strong>Revisa el esquema de referencia.</strong> Cada módulo abre con un diagrama del
+            equipo o circuito donde se señalan las variables con el mismo símbolo que usan los campos.
+          </span>
+        </div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">2</span>
+          <span class="mf-paso__txt" style="font-family: inherit">
+            <strong>Carga el ejemplo si es tu primera vez.</strong> El botón
+            <i class="bi bi-magic"></i> <em>Ejemplo</em> llena el formulario con un caso realista.
+          </span>
+        </div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">3</span>
+          <span class="mf-paso__txt" style="font-family: inherit">
+            <strong>Deja en blanco lo que quieras calcular.</strong> En los balances, la incógnita
+            se deduce de las ecuaciones de conservación.
+          </span>
+        </div>
+      </div>
+      <div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">4</span>
+          <span class="mf-paso__txt" style="font-family: inherit">
+            <strong>Lee los indicadores y las notas.</strong> Las tarjetas superiores resumen el
+            resultado; las notas de color señalan si algún valor sale del rango industrial habitual.
+          </span>
+        </div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">5</span>
+          <span class="mf-paso__txt" style="font-family: inherit">
+            <strong>Verifica el desarrollo.</strong> La sección <em>Desarrollo del cálculo</em>
+            muestra la fórmula y la sustitución numérica, para que puedas comprobarlo a mano.
+          </span>
+        </div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">6</span>
+          <span class="mf-paso__txt" style="font-family: inherit">
+            <strong>Exporta lo que necesites.</strong> Cada tabla tiene botón de CSV y la página
+            completa se puede imprimir o guardar como PDF.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ---------------- Módulos ---------------- #}
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-funnel"></i> Módulo I · Análisis granulométrico</h3>
+    <a class="btn btn-sm btn-mf-suave ms-auto mf-no-print" href="{{ url_for('tamizado.index') }}">Abrir</a>
+  </div>
+  <div class="mf-card__body">
+    <p class="mf-muted">Procesa un ensayo de tamizado y ajusta la distribución de tamaños a un modelo.</p>
+    <div class="mf-tabla-wrap">
+      <table class="mf-tabla">
+        <thead><tr><th class="mf-col-txt">Necesitas</th><th class="mf-col-txt">Obtienes</th><th class="mf-col-txt">Modelo</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mf-col-txt">Abertura de cada malla y peso retenido; opcionalmente el peso total de la muestra.</td>
+            <td class="mf-col-txt">%Retenido, %acumulado y %pasante por malla; d₁₀ a d₉₀; Cu y Cc; parámetros del modelo con R².</td>
+            <td class="mf-col-txt">GGS: %P = 100(d/k)ⁿ<br>Rosin-Rammler: R(d) = 100·e^[−(d/d₀)ⁿ]<br>Regresión: %P = a·log(d) + b</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mf-alerta mf-alerta-info mt-3">
+      <i class="bi bi-lightbulb-fill"></i>
+      <div>Ejecuta los tres modelos con los mismos datos y quédate con el de mayor R². Un R² bajo en
+           todos suele indicar pérdida de finos o pocas mallas: usa al menos 6–8 bien distribuidas.
+           La aplicación verifica el cierre de masa y avisa si la desviación supera el 1 %.</div>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-diagram-3"></i> Módulo II · Balance de masa</h3>
+    <a class="btn btn-sm btn-mf-suave ms-auto mf-no-print" href="{{ url_for('balance_masa.balance_masa') }}">Abrir</a>
+  </div>
+  <div class="mf-card__body">
+    <p class="mf-muted">Resuelve las corrientes de un circuito cerrado de molienda y su carga circulante.</p>
+    <div class="mf-tabla-wrap">
+      <table class="mf-tabla">
+        <thead><tr><th class="mf-col-txt">Circuito</th><th class="mf-col-txt">Ecuación</th><th class="mf-col-txt">Carga circulante</th></tr></thead>
+        <tbody>
+          <tr><td class="mf-col-txt">Cerrado directo</td><td class="mf-col-txt">F = P + R</td><td class="mf-col-txt">CC = (R/P) × 100</td></tr>
+          <tr><td class="mf-col-txt">Cerrado inverso</td><td class="mf-col-txt">F + R = P</td><td class="mf-col-txt">CC = (R/F) × 100</td></tr>
+          <tr><td class="mf-col-txt">SABC-1</td><td class="mf-col-txt">F = S ; S + R = B ; B = P + R</td><td class="mf-col-txt">CC = (R/P) × 100</td></tr>
+          <tr><td class="mf-col-txt">SABC-2</td><td class="mf-col-txt">F = S ; S = P + R</td><td class="mf-col-txt">CC = (R/P) × 100</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mf-alerta mf-alerta-info mt-3">
+      <i class="bi bi-lightbulb-fill"></i>
+      <div>Los circuitos industriales de molienda suelen operar entre 150 % y 350 % de carga
+           circulante. Valores muy altos apuntan a clasificación deficiente o molino con capacidad
+           insuficiente; valores muy bajos, a un molino sobredimensionado.</div>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-graph-up-arrow"></i> Módulo III · Balance metalúrgico</h3>
+    <a class="btn btn-sm btn-mf-suave ms-auto mf-no-print" href="{{ url_for('balance_metalurgico.balance_metalurgico') }}">Abrir</a>
+  </div>
+  <div class="mf-card__body">
+    <p class="mf-muted">Concilia masa y metal para obtener recuperación y razón de concentración.</p>
+    <div class="mf-formula-lista mb-3">
+      <div class="mf-formula">Balance de masa: F = ΣC + T</div>
+      <div class="mf-formula">Balance de metal: F·f = ΣC·c + T·t</div>
+      <div class="mf-formula">Ley de cabeza calculada: f_calc = (ΣC·c + T·t) / F</div>
+      <div class="mf-formula">Recuperación: R = (ΣC·c)/(F·f) × 100</div>
+      <div class="mf-formula">Fórmula de dos productos: C/F = (f − t)/(c − t)</div>
+    </div>
+
+    <h4 style="font-size:.88rem" class="mb-2">Las dos leyes de cabeza</h4>
+    <div class="mf-tabla-wrap mb-3">
+      <table class="mf-tabla">
+        <thead><tr><th class="mf-col-txt">Ley de cabeza</th><th class="mf-col-txt">De dónde sale</th><th class="mf-col-txt">Para qué sirve</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mf-col-txt"><strong>Ensayada</strong></td>
+            <td class="mf-col-txt">Análisis químico de la muestra de cabeza</td>
+            <td class="mf-col-txt">Medición independiente; sujeta a error de muestreo</td>
+          </tr>
+          <tr>
+            <td class="mf-col-txt"><strong>Calculada</strong></td>
+            <td class="mf-col-txt">Recombinación de los productos: (ΣC·c + T·t)/F</td>
+            <td class="mf-col-txt">Hace cerrar el balance; es la base habitual del informe</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mf-alerta mf-alerta-info mb-2">
+      <i class="bi bi-lightbulb-fill"></i>
+      <div>El módulo calcula siempre la <strong>ley de cabeza calculada</strong> y, si ingresas la
+           ensayada, muestra la desviación entre ambas. Esa desviación es el control de calidad del
+           muestreo y del análisis: por encima de <strong>±5 %</strong> conviene revisar antes de dar
+           el balance por válido.</div>
+    </div>
+    <div class="mf-alerta mf-alerta-info mb-2">
+      <i class="bi bi-lightbulb-fill"></i>
+      <div>Los resultados se informan por omisión sobre la <strong>ley calculada</strong>, porque así
+           la recuperación nunca puede superar el 100 %. Puedes cambiar la base a la ley ensayada
+           desde el selector del formulario para comparar ambos criterios.</div>
+    </div>
+    <div class="mf-alerta mf-alerta-warning">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>La comparación entre las dos leyes solo es informativa cuando <strong>mides por separado
+           las masas y las leyes de todos los productos</strong>. Si usas la fórmula de dos productos
+           o dejas que se deduzca la ley de relave, la calculada reproduce a la ensayada por
+           construcción y el módulo lo advierte.</div>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-rulers"></i> Módulo IV · Dimensionamiento de equipos</h3>
+    <a class="btn btn-sm btn-mf-suave ms-auto mf-no-print" href="{{ url_for('dimensionamiento.dimensionamiento') }}">Abrir</a>
+  </div>
+  <div class="mf-card__body">
+    <div class="mf-tabla-wrap">
+      <table class="mf-tabla">
+        <thead><tr><th class="mf-col-txt">Equipo</th><th class="mf-col-txt">Entradas clave</th><th class="mf-col-txt">Modelo aplicado</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mf-col-txt">Molinos de barras y bolas</td>
+            <td class="mf-col-txt">Capacidad, Wi, F80 y P80 (µm), densidad de carga, L/D, llenado J y % de velocidad crítica</td>
+            <td class="mf-col-txt">Bond (1961) para la energía y ecuación de potencia Bond-Rowland para D y L</td>
+          </tr>
+          <tr>
+            <td class="mf-col-txt">Hidrociclones</td>
+            <td class="mf-col-txt">Caudal, corte objetivo, densidades y % de sólidos en volumen</td>
+            <td class="mf-col-txt">Correlación de Plitt (1976) con proporciones estándar Krebs</td>
+          </tr>
+          <tr>
+            <td class="mf-col-txt">Separadores gravimétricos</td>
+            <td class="mf-col-txt">Densidades de mineral, ganga y fluido; tamaño de partícula</td>
+            <td class="mf-col-txt">Criterio de concentración de Taggart y velocidad terminal (Stokes / Newton)</td>
+          </tr>
+          <tr>
+            <td class="mf-col-txt">Silos y tolvas</td>
+            <td class="mf-col-txt">Diámetro, altura, ángulos de tolva y de reposo, densidad aparente</td>
+            <td class="mf-col-txt">Geometría cilindro-cono y presión de pared de Janssen</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mf-alerta mf-alerta-warning mt-3">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>Todos son modelos empíricos calibrados en rangos concretos. Los resultados sirven para
+           ingeniería conceptual y comparación de alternativas; el diseño de detalle exige ensayos
+           del mineral y las curvas del fabricante.</div>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-cash-coin"></i> Módulo V · Valorización de concentrados</h3>
+    <a class="btn btn-sm btn-mf-suave ms-auto mf-no-print" href="{{ url_for('valorizacion.valorizacion') }}">Abrir</a>
+  </div>
+  <div class="mf-card__body">
+    <p class="mf-muted">Reproduce la estructura de una liquidación comercial hasta el retorno neto.</p>
+    <div class="mf-formula-lista mb-3">
+      <div class="mf-formula">Tonelaje seco: dmt = wmt × (1 − humedad/100)</div>
+      <div class="mf-formula">Metal base pagable: mín(ley × %pagable, ley − deducción en unidades)</div>
+      <div class="mf-formula">Precioso pagable (oz): dmt × g/t pagables ÷ 31,1035</div>
+      <div class="mf-formula">NSR = valor bruto − TC − RC − penalidades − flete</div>
+    </div>
+    <div class="mf-alerta mf-alerta-info">
+      <i class="bi bi-lightbulb-fill"></i>
+      <div>Al elegir el metal base se cargan deducciones y cargos de referencia del mercado.
+           Reemplázalos siempre por los del contrato real: TC, RC, deducciones y penalidades se
+           negocian caso a caso y determinan buena parte del resultado.</div>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-tools"></i> Módulo VI · Utilitarios</h3>
+    <a class="btn btn-sm btn-mf-suave ms-auto mf-no-print" href="{{ url_for('utilitarios.utilitarios') }}">Abrir</a>
+  </div>
+  <div class="mf-card__body">
+    <div class="mf-grid mf-grid-2">
+      <ul style="padding-left:1.1rem; line-height:1.9; margin:0">
+        <li>Densidad de pulpa, % de sólidos en volumen y dilución.</li>
+        <li>Equivalencias de ley entre %, g/t, ppm y oz/t.</li>
+        <li>Dosificación de reactivos en kg/h y caudal de solución.</li>
+      </ul>
+      <ul style="padding-left:1.1rem; line-height:1.9; margin:0">
+        <li>Tiempo de residencia por celda y por banco.</li>
+        <li>Carga circulante por análisis de mallas (método de las tres muestras).</li>
+        <li>Conversores de masa, longitud, volumen, caudal, presión, potencia y temperatura.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="mf-card">
+  <div class="mf-card__head"><h3><i class="bi bi-question-circle"></i> Preguntas frecuentes</h3></div>
+  <div class="mf-card__body">
+    <div class="mf-alerta mf-alerta-info mb-2">
+      <i class="bi bi-chat-quote-fill"></i>
+      <div><strong>¿Se guardan mis datos?</strong> No. Todos los cálculos se procesan en la sesión y
+           nada se almacena en el servidor. Exporta a CSV o imprime si necesitas conservar un resultado.</div>
+    </div>
+    <div class="mf-alerta mf-alerta-info mb-2">
+      <i class="bi bi-chat-quote-fill"></i>
+      <div><strong>Aparece «—» en lugar de un número.</strong> Significa que ese valor no se puede
+           determinar con los datos ingresados; por ejemplo, un percentil que cae fuera del rango de
+           mallas ensayadas. La aplicación no extrapola.</div>
+    </div>
+    <div class="mf-alerta mf-alerta-info mb-2">
+      <i class="bi bi-chat-quote-fill"></i>
+      <div><strong>¿Puedo cargar datos desde Excel?</strong> Sí. En el módulo de granulometría copia
+           las columnas de abertura y peso y pégalas directamente sobre la tabla de mallas.</div>
+    </div>
+    <div class="mf-alerta mf-alerta-info">
+      <i class="bi bi-chat-quote-fill"></i>
+      <div><strong>Un resultado se ve fuera de rango.</strong> Revisa las unidades: los tamaños de los
+           molinos van en micrómetros, las aberturas de malla en milímetros y las densidades de
+           sólidos en g/cm³.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

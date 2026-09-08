@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Página no encontrada · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Error 404{% endblock %}
+{% block ruta %}La página solicitada no existe{% endblock %}
+{% block contenido %}
+<div class="mf-card">
+  <div class="mf-card__body">
+    <div class="mf-vacio">
+      <i class="bi bi-compass"></i>
+      <h3>No encontramos esta página</h3>
+      <p>La dirección que intentaste abrir no corresponde a ningún módulo de MetaFlotPy.
+         Puede que el enlace esté desactualizado o mal escrito.</p>
+      <div class="mf-btn-grupo justify-content-center mt-3">
+        <a class="btn btn-mf" href="{{ url_for('principal.inicio') }}"><i class="bi bi-house"></i> Ir al panel de inicio</a>
+        <a class="btn btn-mf-suave" href="{{ url_for('principal.introduccion') }}"><i class="bi bi-book"></i> Ver la guía</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block titulo %}Conversores de unidades · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Conversores de unidades{% endblock %}
+{% block ruta %}Herramientas · Equivalencias métricas e imperiales{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-arrow-left-right"></i> Herramientas</div>
+    <h1>Conversores de unidades</h1>
+    <p>Equivalencias de las magnitudes más usadas en planta. Escribe el valor y elige las unidades:
+       la conversión y la tabla de equivalencias se actualizan al instante.</p>
+  </div>
+  <div class="mf-btn-grupo mf-no-print">
+    <a class="btn btn-sm btn-mf-suave" href="{{ url_for('utilitarios.utilitarios') }}">
+      <i class="bi bi-tools"></i> Utilitarios metalúrgicos
+    </a>
+  </div>
+</div>
+
+<div class="mf-grid mf-grid-2" id="mf-conversores"></div>
+
+<div class="mf-card mt-3">
+  <div class="mf-card__head">
+    <h3><i class="bi bi-thermometer-half"></i> Temperatura</h3>
+    <span class="mf-badge ms-auto mf-no-print">Bidireccional</span>
+  </div>
+  <div class="mf-card__body">
+    <div class="row g-3">
+      <div class="col-sm-4">
+        <label class="form-label" for="temp-c">Celsius</label>
+        <div class="input-group">
+          <input type="number" class="form-control text-end" id="temp-c" step="0.01" data-temp="c" placeholder="25">
+          <span class="input-group-text">°C</span>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label" for="temp-f">Fahrenheit</label>
+        <div class="input-group">
+          <input type="number" class="form-control text-end" id="temp-f" step="0.01" data-temp="f" placeholder="77">
+          <span class="input-group-text">°F</span>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label" for="temp-k">Kelvin</label>
+        <div class="input-group">
+          <input type="number" class="form-control text-end" id="temp-k" step="0.01" data-temp="k" placeholder="298.15">
+          <span class="input-group-text">K</span>
+        </div>
+      </div>
+    </div>
+    <div class="mf-formula mt-3">°F = °C × 9/5 + 32 &nbsp;·&nbsp; K = °C + 273,15</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/conversores.js') }}?v={{ version }}"></script>
+{% endblock %}

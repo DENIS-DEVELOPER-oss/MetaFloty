@@ -1,0 +1,20 @@
+# Normaliza los finales de línea en el repositorio.
+# Sin esto, Git en Windows convierte a CRLF y los scripts de despliegue
+# fallan en Linux con "bash: \r: command not found".
+* text=auto eol=lf
+
+# Scripts nativos de Windows: se dejan con CRLF
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.config text eol=crlf
+
+# Binarios: sin conversión
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_tamices %}
+
+{% block titulo %}Regresión empírica · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Regresión lineal empírica{% endblock %}
+{% block ruta %}Módulo I · Granulometría · Ajuste por mínimos cuadrados{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-funnel"></i> Módulo I · Granulometría</div>
+    <h1>Regresión lineal empírica</h1>
+    <p>Ajusta el porcentaje pasante frente al logaritmo del tamaño mediante mínimos cuadrados
+       (<strong>%P = a·log(d) + b</strong>). Útil para interpolar rápidamente tamaños dentro del rango
+       ensayado y para evaluar la dispersión de los datos mediante el análisis de residuos.</p>
+  </div>
+  <div class="mf-btn-grupo mf-no-print">
+    <a class="btn btn-sm btn-mf-suave" href="{{ url_for('tamizado.analisis_granulometrico') }}">
+      <i class="bi bi-arrow-left-right"></i> Ver modelo GGS
+    </a>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">{{ esq_tamices() }}</div>
+
+{% set boton_texto = 'Calcular regresión' %}
+{% include "tamizado/_entrada.html" %}
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados_calculo %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">Recta de mínimos cuadrados</h1>
+      </div>
+      <span class="mf-badge mf-badge-{{ resultados_calculo.calidad_color }}">
+        <i class="bi bi-patch-check"></i> {{ resultados_calculo.calidad }} · R² = {{ resultados_calculo.r2 | num(4) }}
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-slash-lg"></i> Pendiente a</div>
+        <div class="mf-kpi__valor">{{ resultados_calculo.a | num(4) }}</div>
+        <div class="mf-kpi__nota">Puntos porcentuales por década de tamaño</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-arrow-bar-up"></i> Intersección b</div>
+        <div class="mf-kpi__valor">{{ resultados_calculo.b | num(4) }}</div>
+        <div class="mf-kpi__nota">%P extrapolado en d = 1 mm</div>
+      </div>
+      <div class="mf-kpi mf-c-success">
+        <div class="mf-kpi__label"><i class="bi bi-bullseye"></i> R²</div>
+        <div class="mf-kpi__valor">{{ resultados_calculo.r2 | num(4) }}</div>
+        <div class="mf-kpi__nota">Variabilidad explicada</div>
+      </div>
+      <div class="mf-kpi mf-c-warning">
+        <div class="mf-kpi__label"><i class="bi bi-plus-slash-minus"></i> RMSE</div>
+        <div class="mf-kpi__valor">{{ resultados_calculo.rmse | num(3) }}</div>
+        <div class="mf-kpi__nota">Residuo máximo {{ resultados_calculo.residuo_max | num(2) }} pp</div>
+      </div>
+    </div>
+
+    <div class="mf-card mb-3">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-braces"></i> Ecuación y método de cálculo</h3>
+        <div class="mf-acciones mf-no-print">
+          <button class="btn btn-sm btn-mf-suave" data-copiar="{{ resultados_calculo.ecuacion }}">
+            <i class="bi bi-clipboard"></i> Copiar ecuación
+          </button>
+        </div>
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-formula mb-3">{{ resultados_calculo.ecuacion }}</div>
+
+        <div class="mf-paso">
+          <span class="mf-paso__n">1</span>
+          <span class="mf-paso__txt">{{ resultados_calculo.formula_minimos_cuadrados.a_formula }}</span>
+        </div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">2</span>
+          <span class="mf-paso__txt">{{ resultados_calculo.formula_minimos_cuadrados.b_formula }}</span>
+        </div>
+        <div class="mf-paso">
+          <span class="mf-paso__n">3</span>
+          <span class="mf-paso__txt">
+            n = {{ resultados_calculo.n_datos }} ·
+            Σx = {{ resultados_calculo.sum_x | num(4) }} ·
+            Σy = {{ resultados_calculo.sum_y | num(2) }} ·
+            Σxy = {{ resultados_calculo.sum_xy | num(3) }} ·
+            Σx² = {{ resultados_calculo.sum_x2 | num(4) }}
+          </span>
+        </div>
+
+        <div class="mf-alerta mf-alerta-info mt-3">
+          <i class="bi bi-lightbulb-fill"></i>
+          <div>{{ resultados_calculo.interpretacion }}</div>
+        </div>
+        <div class="mf-alerta mf-alerta-warning mt-2">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>
+            Esta recta es una <strong>interpolación empírica</strong>, no un modelo físico de conminución:
+            solo es válida dentro del rango ensayado
+            ({{ descriptores.rango_min | num_auto }}–{{ descriptores.rango_max | num_auto }} mm).
+            Para extrapolar, usa GGS o Rosin-Rammler.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% set grafico_secundario = grafico_regresion %}
+    {% set titulo_secundario = 'Dispersión y recta ajustada' %}
+    {% include "tamizado/_resultados_comunes.html" %}
+
+    {% if grafico_residuos %}
+    <div class="mf-card mb-3">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-bar-chart-steps"></i> Análisis de residuos</h3>
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-grafico mf-grafico-sm" data-figura='{{ grafico_residuos | tojson }}'></div>
+        <p class="mf-esquema-nota">
+          Residuos repartidos al azar en torno a cero indican un buen ajuste;
+          un patrón curvo señala que el modelo lineal en log(d) no describe bien la distribución.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mf-card">
+      <div class="mf-card__head">
+        <h3><i class="bi bi-calculator"></i> Detalle punto a punto</h3>
+        <div class="mf-acciones mf-no-print">
+          <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-reg" data-nombre="regresion-lineal">
+            <i class="bi bi-filetype-csv"></i> Exportar CSV
+          </button>
+        </div>
+      </div>
+      <div class="mf-card__body">
+        <div class="mf-tabla-wrap">
+          <table class="mf-tabla" id="mf-tabla-reg">
+            <thead>
+              <tr>
+                <th>Malla</th>
+                <th>d <small>(mm)</small></th>
+                <th>x = log(d)</th>
+                <th>%P observado</th>
+                <th>%P calculado</th>
+                <th>Residuo <small>(pp)</small></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in resultados_calculo.tabla_regresion %}
+              <tr>
+                <td class="mf-col-txt">{{ f.nombre }}</td>
+                <td>{{ f.abertura | num_auto }}</td>
+                <td>{{ f.log_d | num(4) }}</td>
+                <td>{{ f.porcentaje_pasante | num(2) }}</td>
+                <td>{{ f.y_calculado | num(2) }}</td>
+                <td>{{ f.residuo | num(2) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-clipboard-data"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Ingresa los datos del tamizado y pulsa <strong>Calcular regresión</strong> para obtener
+             la recta ajustada, el coeficiente R² y el análisis de residuos.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tamizado.js') }}?v={{ version }}"></script>
+<script>
+  MFTamizado.iniciar({
+    astm: {{ mallas_astm | tojson }},
+    tyler: {{ mallas_tyler | tojson }},
+    ejemplo: [
+      {nombre: '1/2"',    abertura: 12.700, peso: 32.5},
+      {nombre: '3/8"',    abertura: 9.525,  peso: 58.0},
+      {nombre: '1/4"',    abertura: 6.350,  peso: 94.5},
+      {nombre: 'N.º 4',   abertura: 4.750,  peso: 118.0},
+      {nombre: 'N.º 8',   abertura: 2.360,  peso: 165.5},
+      {nombre: 'N.º 16',  abertura: 1.180,  peso: 158.0},
+      {nombre: 'N.º 30',  abertura: 0.600,  peso: 126.0},
+      {nombre: 'N.º 50',  abertura: 0.300,  peso: 92.5},
+      {nombre: 'N.º 100', abertura: 0.150,  peso: 68.0},
+      {nombre: 'N.º 200', abertura: 0.075,  peso: 51.0},
+      {nombre: 'Fondo',   abertura: 0.038,  peso: 36.0}
+    ]
+  });
+</script>
+{% endblock %}

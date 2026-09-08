@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% from "_esquemas.html" import esq_pulpa %}
+
+{% block titulo %}Utilitarios metalúrgicos · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Utilitarios metalúrgicos{% endblock %}
+{% block ruta %}Herramientas de cálculo rápido{% endblock %}
+
+{% block contenido %}
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-tools"></i> Herramientas</div>
+    <h1>Utilitarios metalúrgicos</h1>
+    <p>Cálculos auxiliares de planta que se resuelven al instante mientras escribes: propiedades
+       de la pulpa, equivalencias de leyes, dosificación de reactivos y tiempo de residencia.</p>
+  </div>
+  <div class="mf-btn-grupo mf-no-print">
+    <a class="btn btn-sm btn-mf-suave" href="{{ url_for('utilitarios.conversores') }}">
+      <i class="bi bi-arrow-left-right"></i> Conversores de unidades
+    </a>
+  </div>
+</div>
+
+<div class="mb-3">{{ esq_pulpa() }}</div>
+
+<div class="mf-grid mf-grid-2 mb-3">
+
+  {# ---------------- Densidad de pulpa ---------------- #}
+  <div class="mf-card">
+    <div class="mf-card__head">
+      <h3><i class="bi bi-droplet-half"></i> Propiedades de la pulpa</h3>
+      <span class="mf-badge ms-auto mf-no-print">En vivo</span>
+    </div>
+    <div class="mf-card__body">
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label" for="pulpa-solidos">% de sólidos en peso</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="pulpa-solidos" step="0.1" min="0.1" max="99" value="35">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="form-label" for="pulpa-gs">Gravedad específica del sólido</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="pulpa-gs" step="0.01" min="1" max="12" value="2.70">
+            <span class="input-group-text">Gs</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mf-tabla-wrap">
+        <table class="mf-tabla" id="mf-tabla-pulpa">
+          <thead><tr><th class="mf-col-txt">Propiedad</th><th>Valor</th><th class="mf-col-txt">Unidad</th></tr></thead>
+          <tbody>
+            <tr><td class="mf-col-txt">Densidad de la pulpa</td><td id="pulpa-densidad">—</td><td class="mf-col-txt">g/cm³</td></tr>
+            <tr><td class="mf-col-txt">Densidad de la pulpa</td><td id="pulpa-densidad-kg">—</td><td class="mf-col-txt">kg/m³</td></tr>
+            <tr><td class="mf-col-txt">Sólidos por litro de pulpa</td><td id="pulpa-cs">—</td><td class="mf-col-txt">g/L</td></tr>
+            <tr><td class="mf-col-txt">% de sólidos en volumen</td><td id="pulpa-sv">—</td><td class="mf-col-txt">%</td></tr>
+            <tr><td class="mf-col-txt">Dilución (agua : sólido)</td><td id="pulpa-dilucion">—</td><td class="mf-col-txt">—</td></tr>
+            <tr><td class="mf-col-txt">Agua por tonelada de sólido</td><td id="pulpa-agua">—</td><td class="mf-col-txt">m³/t</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mf-formula mt-3">ρp = 100 / [%S/Gs + (100 − %S)]</div>
+
+      <div class="d-flex gap-2 mt-3 mf-no-print">
+        <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-pulpa" data-nombre="pulpa">
+          <i class="bi bi-filetype-csv"></i> Exportar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {# ---------------- Curva de densidad de pulpa ---------------- #}
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-graph-up"></i> Densidad frente a % de sólidos</h3></div>
+    <div class="mf-card__body">
+      <div id="mf-grafico-pulpa" class="mf-grafico mf-grafico-sm"></div>
+      <p class="mf-esquema-nota">
+        La curva se recalcula con la gravedad específica que ingreses. El punto marcado
+        corresponde al porcentaje de sólidos actual.
+      </p>
+    </div>
+  </div>
+
+  {# ---------------- Equivalencias de ley ---------------- #}
+  <div class="mf-card">
+    <div class="mf-card__head">
+      <h3><i class="bi bi-gem"></i> Equivalencias de ley</h3>
+      <span class="mf-badge ms-auto mf-no-print">Bidireccional</span>
+    </div>
+    <div class="mf-card__body">
+      <p class="mf-muted mb-3" style="font-size:.82rem">
+        Escribe en cualquier campo: los demás se actualizan al instante.
+      </p>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="form-label" for="ley-pct">Ley en porcentaje</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="ley-pct" step="0.0001" placeholder="1.2" data-ley="pct">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label" for="ley-gt">Gramos por tonelada</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="ley-gt" step="0.01" placeholder="12000" data-ley="gt">
+            <span class="input-group-text">g/t</span>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label" for="ley-ppm">Partes por millón</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="ley-ppm" step="0.01" placeholder="12000" data-ley="ppm">
+            <span class="input-group-text">ppm</span>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label" for="ley-ozt">Onzas troy por tonelada</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="ley-ozt" step="0.0001" placeholder="385.8" data-ley="ozt">
+            <span class="input-group-text">oz/t</span>
+          </div>
+        </div>
+      </div>
+      <div class="mf-alerta mf-alerta-info mt-3">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>1 % = 10 000 g/t · 1 g/t = 1 ppm · 1 oz troy = 31,1035 g.
+             Las leyes en g/t se usan para oro y plata; el porcentaje, para metales base.</div>
+      </div>
+    </div>
+  </div>
+
+  {# ---------------- Dosificación de reactivos ---------------- #}
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-eyedropper"></i> Dosificación de reactivos</h3></div>
+    <div class="mf-card__body">
+      <div class="row g-3 mb-3">
+        <div class="col-sm-4">
+          <label class="form-label" for="reac-tratamiento">Tratamiento</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="reac-tratamiento" step="0.1" min="0" value="180">
+            <span class="input-group-text">t/h</span>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label" for="reac-dosis">Dosificación</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="reac-dosis" step="0.1" min="0" value="35">
+            <span class="input-group-text">g/t</span>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label" for="reac-conc">Concentración de la solución</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="reac-conc" step="0.1" min="0.1" max="100" value="10">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mf-tabla-wrap">
+        <table class="mf-tabla" id="mf-tabla-reactivos">
+          <thead><tr><th class="mf-col-txt">Requerimiento</th><th>Valor</th><th class="mf-col-txt">Unidad</th></tr></thead>
+          <tbody>
+            <tr><td class="mf-col-txt">Reactivo puro por hora</td><td id="reac-kg-h">—</td><td class="mf-col-txt">kg/h</td></tr>
+            <tr><td class="mf-col-txt">Reactivo puro por día</td><td id="reac-kg-dia">—</td><td class="mf-col-txt">kg/día</td></tr>
+            <tr><td class="mf-col-txt">Consumo mensual (30 días)</td><td id="reac-t-mes">—</td><td class="mf-col-txt">t/mes</td></tr>
+            <tr><td class="mf-col-txt">Caudal de solución</td><td id="reac-l-h">—</td><td class="mf-col-txt">L/h</td></tr>
+            <tr><td class="mf-col-txt">Caudal de solución</td><td id="reac-ml-min">—</td><td class="mf-col-txt">mL/min</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mf-formula mt-3">kg/h = (t/h × g/t) / 1000 &nbsp;·&nbsp; L/h = kg/h × 100 / %conc</div>
+    </div>
+  </div>
+
+  {# ---------------- Tiempo de residencia ---------------- #}
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-hourglass-split"></i> Tiempo de residencia</h3></div>
+    <div class="mf-card__body">
+      <div class="row g-3 mb-3">
+        <div class="col-sm-4">
+          <label class="form-label" for="res-volumen">Volumen efectivo</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="res-volumen" step="0.1" min="0.01" value="130">
+            <span class="input-group-text">m³</span>
+          </div>
+          <div class="form-text">Por celda o estanque.</div>
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label" for="res-caudal">Caudal de pulpa</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="res-caudal" step="0.1" min="0.01" value="420">
+            <span class="input-group-text">m³/h</span>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label" for="res-unidades">Número de unidades en serie</label>
+          <input type="number" class="form-control text-end" id="res-unidades" step="1" min="1" value="6">
+        </div>
+      </div>
+
+      <div class="mf-kpis">
+        <div class="mf-kpi mf-c-primary">
+          <div class="mf-kpi__label"><i class="bi bi-stopwatch"></i> Por unidad</div>
+          <div class="mf-kpi__valor" id="res-unidad">—<span class="mf-kpi__unidad">min</span></div>
+        </div>
+        <div class="mf-kpi mf-c-accent">
+          <div class="mf-kpi__label"><i class="bi bi-hourglass"></i> Total del banco</div>
+          <div class="mf-kpi__valor" id="res-total">—<span class="mf-kpi__unidad">min</span></div>
+        </div>
+        <div class="mf-kpi mf-c-info">
+          <div class="mf-kpi__label"><i class="bi bi-box"></i> Volumen instalado</div>
+          <div class="mf-kpi__valor" id="res-volumen-total">—<span class="mf-kpi__unidad">m³</span></div>
+        </div>
+      </div>
+      <div class="mf-formula mt-3">τ = V / Q &nbsp;·&nbsp; τ_total = n × V / Q</div>
+    </div>
+  </div>
+
+  {# ---------------- Carga circulante rápida ---------------- #}
+  <div class="mf-card">
+    <div class="mf-card__head"><h3><i class="bi bi-arrow-repeat"></i> Carga circulante por análisis de mallas</h3></div>
+    <div class="mf-card__body">
+      <p class="mf-muted mb-3" style="font-size:.82rem">
+        Método de las tres muestras: con el porcentaje pasante en una misma malla de la descarga
+        del molino (d), el rebose del clasificador (o) y la descarga gruesa (u).
+      </p>
+      <div class="row g-3 mb-3">
+        <div class="col-sm-4">
+          <label class="form-label" for="cc-d">Descarga del molino</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="cc-d" step="0.1" min="0" max="100" value="52">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label" for="cc-o">Rebose (overflow)</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="cc-o" step="0.1" min="0" max="100" value="80">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label" for="cc-u">Descarga gruesa (underflow)</label>
+          <div class="input-group">
+            <input type="number" class="form-control text-end" id="cc-u" step="0.1" min="0" max="100" value="32">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="mf-kpis">
+        <div class="mf-kpi mf-c-warning">
+          <div class="mf-kpi__label"><i class="bi bi-arrow-repeat"></i> Carga circulante</div>
+          <div class="mf-kpi__valor" id="cc-resultado">—<span class="mf-kpi__unidad">%</span></div>
+          <div class="mf-kpi__nota" id="cc-nota">CC = (o − d) / (d − u) × 100</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/utilitarios.js') }}?v={{ version }}"></script>
+{% endblock %}

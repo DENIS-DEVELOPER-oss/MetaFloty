@@ -1,0 +1,296 @@
+{# Contenido compartido por molino de barras y de bolas. Requiere `tipo`. #}
+{% from "_esquemas.html" import esq_molino %}
+
+{% set es_barras = tipo == 'barras' %}
+{% set nombre_equipo = 'Molino de barras' if es_barras else 'Molino de bolas' %}
+{% set ld_def = 1.6 if es_barras else 1.3 %}
+{% set j_def = 0.40 if es_barras else 0.35 %}
+
+<div class="mf-pagina-head">
+  <div>
+    <div class="mf-eyebrow"><i class="bi bi-rulers"></i> Módulo IV · Dimensionamiento</div>
+    <h1>{{ nombre_equipo }}</h1>
+    <p>Calcula la potencia requerida con la ecuación de Bond y despeja el diámetro y la longitud
+       del molino a partir de la ecuación de potencia de Bond-Rowland, considerando el llenado
+       de carga y la fracción de velocidad crítica de operación.</p>
+  </div>
+  <div class="mf-btn-grupo mf-no-print">
+    <a class="btn btn-sm btn-mf-suave"
+       href="{{ url_for('dimensionamiento.molino_bolas' if es_barras else 'dimensionamiento.molino_barras') }}">
+      <i class="bi bi-arrow-left-right"></i> Ver {{ 'molino de bolas' if es_barras else 'molino de barras' }}
+    </a>
+  </div>
+</div>
+
+<div class="mb-3" data-zona-alertas></div>
+
+<div class="mb-3">{{ esq_molino(tipo) }}</div>
+
+<div class="mf-card mb-3">
+  <div class="mf-card__head">
+    <h2><i class="bi bi-sliders"></i> Datos de proceso y operación</h2>
+  </div>
+
+  <form method="POST" data-ajax="#mf-resultados" data-validar data-cargando id="mf-form-molino">
+    <div class="mf-card__body">
+
+      <fieldset class="mf-fieldset">
+        <legend>Requerimiento de molienda</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="capacidad_tratamiento"><span class="mf-sim">F</span> · Capacidad</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="capacidad_tratamiento"
+                     name="capacidad_tratamiento" step="0.1" min="0.01" placeholder="250" required
+                     value="{{ entradas.get('capacidad_tratamiento', '') }}">
+              <span class="input-group-text">t/h</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="indice_trabajo"><span class="mf-sim">Wi</span> · Índice de trabajo</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="indice_trabajo"
+                     name="indice_trabajo" step="0.1" min="0.1" max="100" placeholder="14.5" required
+                     value="{{ entradas.get('indice_trabajo', '') }}">
+              <span class="input-group-text">kWh/t</span>
+            </div>
+            <div class="form-text">Bond ball/rod mill work index del mineral.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="f80_alimentacion"><span class="mf-sim">F80</span> · Alimentación</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="f80_alimentacion"
+                     name="f80_alimentacion" step="1" min="1" placeholder="{{ '12000' if es_barras else '2500' }}" required
+                     value="{{ entradas.get('f80_alimentacion', '') }}">
+              <span class="input-group-text">µm</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="p80_producto"><span class="mf-sim">P80</span> · Producto</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="p80_producto"
+                     name="p80_producto" step="1" min="1" placeholder="{{ '1200' if es_barras else '150' }}" required
+                     value="{{ entradas.get('p80_producto', '') }}">
+              <span class="input-group-text">µm</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="mf-fieldset">
+        <legend>Carga moledora y operación</legend>
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="densidad_carga"><span class="mf-sim">ρb</span> · Densidad aparente de la carga</label>
+            <div class="input-group">
+              <input type="number" class="form-control text-end" id="densidad_carga"
+                     name="densidad_carga" step="0.01" min="0.5" max="12" placeholder="{{ '6.25' if es_barras else '4.65' }}" required
+                     value="{{ entradas.get('densidad_carga', '') }}">
+              <span class="input-group-text">t/m³</span>
+            </div>
+            <div class="form-text">Típico: {{ '5,8–6,4 t/m³ (barras de acero)' if es_barras else '4,5–4,8 t/m³ (bolas de acero)' }}.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="relacion_largo_diametro"><span class="mf-sim">L/D</span> · Relación largo/diámetro</label>
+            <input type="number" class="form-control text-end" id="relacion_largo_diametro"
+                   name="relacion_largo_diametro" step="0.05" min="0.3" max="4"
+                   value="{{ entradas.get('relacion_largo_diametro', ld_def) }}">
+            <div class="form-text">Rango usual: {{ '1,4–2,0' if es_barras else '1,0–1,5' }}.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="llenado"><span class="mf-sim">J</span> · Fracción de llenado</label>
+            <input type="number" class="form-control text-end" id="llenado"
+                   name="llenado" step="0.01" min="0.05" max="0.55"
+                   value="{{ entradas.get('llenado', j_def) }}">
+            <div class="form-text">Volumen de carga / volumen del molino.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="velocidad_critica"><span class="mf-sim">Nc</span> · Fracción de velocidad crítica</label>
+            <input type="number" class="form-control text-end" id="velocidad_critica"
+                   name="velocidad_critica" step="0.01" min="0.3" max="0.95"
+                   value="{{ entradas.get('velocidad_critica', '0.72') }}">
+            <div class="form-text">Industrial: 0,65–0,80.</div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="eficiencia"><span class="mf-sim">η</span> · Eficiencia motor-transmisión</label>
+            <input type="number" class="form-control text-end" id="eficiencia"
+                   name="eficiencia" step="0.01" min="0.5" max="1"
+                   value="{{ entradas.get('eficiencia', '0.92') }}">
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="mf-card__pie d-flex flex-wrap gap-2 align-items-center mf-no-print">
+      <button type="submit" class="btn btn-mf"><i class="bi bi-calculator"></i> Dimensionar molino</button>
+      <button type="button" class="btn btn-mf-suave" id="mf-ejemplo-molino">
+        <i class="bi bi-magic"></i> Cargar ejemplo
+      </button>
+    </div>
+  </form>
+</div>
+
+<div id="mf-resultados">
+  {% if error_mensaje %}
+    <div class="mf-alerta mf-alerta-warning" data-error-calculo>
+      <i class="bi bi-exclamation-triangle-fill"></i><div>{{ error_mensaje }}</div>
+    </div>
+  {% elif resultados %}
+    <span hidden data-hay-resultados></span>
+
+    <div class="mf-pagina-head mt-4">
+      <div>
+        <div class="mf-eyebrow"><i class="bi bi-clipboard-data"></i> Resultados</div>
+        <h1 class="h4 mb-0">{{ nombre_equipo }} · {{ resultados.diametro | num(2) }} m × {{ resultados.longitud | num(2) }} m</h1>
+      </div>
+      <span class="mf-badge mf-badge-primary">
+        <i class="bi bi-lightning-charge"></i> {{ resultados.potencia_motor | num(0) }} kW instalados
+      </span>
+    </div>
+
+    <div class="mf-kpis mb-3">
+      <div class="mf-kpi mf-c-primary">
+        <div class="mf-kpi__label"><i class="bi bi-lightning-charge"></i> Potencia al eje</div>
+        <div class="mf-kpi__valor">{{ resultados.potencia_eje | num(1) }}<span class="mf-kpi__unidad">kW</span></div>
+        <div class="mf-kpi__nota">{{ resultados.consumo_especifico | num(3) }} kWh/t</div>
+      </div>
+      <div class="mf-kpi mf-c-accent">
+        <div class="mf-kpi__label"><i class="bi bi-arrows-angle-expand"></i> Diámetro interior</div>
+        <div class="mf-kpi__valor">{{ resultados.diametro | num(2) }}<span class="mf-kpi__unidad">m</span></div>
+        <div class="mf-kpi__nota">{{ (resultados.diametro * 3.281) | num(1) }} pies</div>
+      </div>
+      <div class="mf-kpi mf-c-info">
+        <div class="mf-kpi__label"><i class="bi bi-arrows"></i> Longitud</div>
+        <div class="mf-kpi__valor">{{ resultados.longitud | num(2) }}<span class="mf-kpi__unidad">m</span></div>
+        <div class="mf-kpi__nota">L/D = {{ resultados.L_D | num(2) }}</div>
+      </div>
+      <div class="mf-kpi mf-c-success">
+        <div class="mf-kpi__label"><i class="bi bi-speedometer"></i> Velocidad de operación</div>
+        <div class="mf-kpi__valor">{{ resultados.vel_operacion | num(2) }}<span class="mf-kpi__unidad">rpm</span></div>
+        <div class="mf-kpi__nota">{{ resultados.nc | num(2) }} × Nc ({{ resultados.vel_critica | num(2) }} rpm)</div>
+      </div>
+      <div class="mf-kpi mf-c-warning">
+        <div class="mf-kpi__label"><i class="bi bi-box"></i> Carga moledora</div>
+        <div class="mf-kpi__valor">{{ resultados.masa_carga | num(1) }}<span class="mf-kpi__unidad">t</span></div>
+        <div class="mf-kpi__nota">J = {{ resultados.J | num(2) }} · {{ resultados.volumen_carga | num(1) }} m³</div>
+      </div>
+    </div>
+
+    {% for nota in notas %}
+    <div class="mf-alerta mf-alerta-{{ nota.color }} mb-2">
+      <i class="bi bi-{{ 'check-circle-fill' if nota.color == 'success' else 'exclamation-triangle-fill' if nota.color in ['warning','danger'] else 'info-circle-fill' }}"></i>
+      <div>{{ nota.texto }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="mf-grid mf-grid-2 mt-3 mb-3">
+      {% if graficos.sensibilidad %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-graph-down"></i> Sensibilidad al P80</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.sensibilidad | tojson }}'></div>
+          <p class="mf-esquema-nota">
+            La energía crece muy rápido al exigir productos más finos: reducir el P80 a la mitad
+            multiplica la potencia por √2 aproximadamente.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+      {% if graficos.potencia %}
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-speedometer2"></i> Potencia según velocidad y llenado</h3></div>
+        <div class="mf-card__body">
+          <div class="mf-grafico" data-figura='{{ graficos.potencia | tojson }}'></div>
+          <p class="mf-esquema-nota">
+            Para el molino dimensionado: cómo variaría la potencia demandada al cambiar
+            la velocidad de giro y el nivel de carga.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mf-grid mf-grid-2">
+      <div class="mf-card">
+        <div class="mf-card__head"><h3><i class="bi bi-123"></i> Desarrollo del cálculo</h3></div>
+        <div class="mf-card__body">
+          {% for paso in resultados.pasos %}
+          <div class="mf-paso">
+            <span class="mf-paso__n">{{ loop.index }}</span>
+            <span class="mf-paso__txt">{{ paso }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mf-card">
+        <div class="mf-card__head">
+          <h3><i class="bi bi-table"></i> Hoja de resultados</h3>
+          <div class="mf-acciones mf-no-print">
+            <button class="btn btn-sm btn-mf-suave" data-exportar="#mf-tabla-molino" data-nombre="molino-{{ tipo }}">
+              <i class="bi bi-filetype-csv"></i> CSV
+            </button>
+          </div>
+        </div>
+        <div class="mf-card__body">
+          <div class="mf-tabla-wrap">
+            <table class="mf-tabla" id="mf-tabla-molino">
+              <thead><tr><th class="mf-col-txt">Parámetro</th><th>Valor</th><th class="mf-col-txt">Unidad</th></tr></thead>
+              <tbody>
+                <tr><td class="mf-col-txt">Consumo específico de energía</td><td>{{ resultados.consumo_especifico | num(3) }}</td><td class="mf-col-txt">kWh/t</td></tr>
+                <tr><td class="mf-col-txt">Potencia al eje</td><td>{{ resultados.potencia_eje | num(1) }}</td><td class="mf-col-txt">kW</td></tr>
+                <tr><td class="mf-col-txt">Potencia instalada del motor</td><td>{{ resultados.potencia_motor | num(1) }}</td><td class="mf-col-txt">kW</td></tr>
+                <tr><td class="mf-col-txt">Energía diaria</td><td>{{ resultados.energia_dia | num(0) }}</td><td class="mf-col-txt">kWh/día</td></tr>
+                <tr><td class="mf-col-txt">Diámetro interior D</td><td>{{ resultados.diametro | num(3) }}</td><td class="mf-col-txt">m</td></tr>
+                <tr><td class="mf-col-txt">Longitud L</td><td>{{ resultados.longitud | num(3) }}</td><td class="mf-col-txt">m</td></tr>
+                <tr><td class="mf-col-txt">Volumen del cuerpo</td><td>{{ resultados.volumen | num(2) }}</td><td class="mf-col-txt">m³</td></tr>
+                <tr><td class="mf-col-txt">Volumen de carga</td><td>{{ resultados.volumen_carga | num(2) }}</td><td class="mf-col-txt">m³</td></tr>
+                <tr><td class="mf-col-txt">Masa de carga moledora</td><td>{{ resultados.masa_carga | num(2) }}</td><td class="mf-col-txt">t</td></tr>
+                <tr><td class="mf-col-txt">Velocidad crítica</td><td>{{ resultados.vel_critica | num(2) }}</td><td class="mf-col-txt">rpm</td></tr>
+                <tr><td class="mf-col-txt">Velocidad de operación</td><td>{{ resultados.vel_operacion | num(2) }}</td><td class="mf-col-txt">rpm</td></tr>
+                <tr><td class="mf-col-txt">Razón de reducción F80/P80</td><td>{{ resultados.razon_reduccion | num(2) }}</td><td class="mf-col-txt">—</td></tr>
+                <tr><td class="mf-col-txt">{{ resultados.etiqueta_cuerpo }}</td><td>{{ resultados.cuerpo_moledor | num(1) }}</td><td class="mf-col-txt">mm</td></tr>
+                <tr><td class="mf-col-txt">Potencia de verificación de la geometría</td><td>{{ resultados.potencia_verificacion | num(1) }}</td><td class="mf-col-txt">kW</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mf-alerta mf-alerta-warning mt-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>Estimación de ingeniería conceptual. El diseño de detalle debe considerar
+                 la eficiencia real del circuito, los factores de corrección de Rowland y la
+                 selección de accionamiento del fabricante.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mf-card">
+      <div class="mf-card__body">
+        <div class="mf-vacio">
+          <i class="bi bi-rulers"></i>
+          <h3>Aún no hay resultados</h3>
+          <p>Ingresa la capacidad, el índice de trabajo y los tamaños F80 y P80.
+             Pulsa <strong>Cargar ejemplo</strong> para ver un caso típico resuelto.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+document.getElementById('mf-ejemplo-molino').addEventListener('click', function () {
+  const ej = {{ ({'capacidad_tratamiento': 180, 'indice_trabajo': 13.5, 'f80_alimentacion': 12000,
+                  'p80_producto': 1200, 'densidad_carga': 6.25, 'relacion_largo_diametro': 1.6,
+                  'llenado': 0.40, 'velocidad_critica': 0.70, 'eficiencia': 0.92}
+                 if es_barras else
+                 {'capacidad_tratamiento': 180, 'indice_trabajo': 14.5, 'f80_alimentacion': 2500,
+                  'p80_producto': 150, 'densidad_carga': 4.65, 'relacion_largo_diametro': 1.3,
+                  'llenado': 0.35, 'velocidad_critica': 0.72, 'eficiencia': 0.92}) | tojson }};
+  Object.keys(ej).forEach(function (k) {
+    const e = document.getElementById(k);
+    if (e) e.value = ej[k];
+  });
+  MF.aviso('Ejemplo cargado. Pulsa «Dimensionar molino».', 'info', 4000);
+});
+</script>

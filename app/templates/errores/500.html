@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Error del servidor · MetaFlotPy{% endblock %}
+{% block titulo_pagina %}Error 500{% endblock %}
+{% block ruta %}Ocurrió un problema al procesar la solicitud{% endblock %}
+{% block contenido %}
+<div class="mf-card">
+  <div class="mf-card__body">
+    <div class="mf-vacio">
+      <i class="bi bi-exclamation-octagon"></i>
+      <h3>Algo falló al procesar el cálculo</h3>
+      <p>El servidor no pudo completar la operación. Vuelve a intentarlo; si el problema
+         persiste, revisa que los datos ingresados sean numéricos y estén dentro de rangos físicos válidos.</p>
+      <div class="mf-btn-grupo justify-content-center mt-3">
+        <a class="btn btn-mf" href="{{ url_for('principal.inicio') }}"><i class="bi bi-house"></i> Volver al inicio</a>
+        <button class="btn btn-mf-suave" onclick="history.back()"><i class="bi bi-arrow-left"></i> Regresar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
