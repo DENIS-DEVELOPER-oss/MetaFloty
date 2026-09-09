@@ -94,12 +94,28 @@ ok "activo y respondiendo en 127.0.0.1:8000"
 
 aviso "7/7 · Nginx"
 CONF=$(mktemp)
-sed "s#/opt/metaflotpy#$RAIZ#g" "$RAIZ/app/despliegue/linux/nginx-metaflotpy.conf" > "$CONF"
 
-if [[ -n "$DOMINIO" ]]; then
+# ¿El dominio ya tiene certificado emitido? Entonces se sirve HTTPS de
+# entrada, sin pasar de nuevo por certbot.
+CERT_DIR="/etc/letsencrypt/live/$DOMINIO"
+CON_TLS=0
+if [[ -n "$DOMINIO" && -f "$CERT_DIR/fullchain.pem" && -f "$CERT_DIR/privkey.pem" ]]; then
+    CON_TLS=1
+fi
+
+if [[ $CON_TLS -eq 1 ]]; then
+    sed "s#/opt/metaflotpy#$RAIZ#g" \
+        "$RAIZ/app/despliegue/linux/nginx-metaflotpy-https.conf" > "$CONF"
+    sed -i "s#server_name metaflotpy.ejemplo.pe;#server_name $DOMINIO;#g" "$CONF"
+    sed -i "s#/etc/ssl/metaflotpy/fullchain.pem#$CERT_DIR/fullchain.pem#" "$CONF"
+    sed -i "s#/etc/ssl/metaflotpy/privkey.pem#$CERT_DIR/privkey.pem#" "$CONF"
+    ok "sitio HTTPS para $DOMINIO reutilizando el certificado existente"
+elif [[ -n "$DOMINIO" ]]; then
+    sed "s#/opt/metaflotpy#$RAIZ#g" "$RAIZ/app/despliegue/linux/nginx-metaflotpy.conf" > "$CONF"
     sed -i "s#server_name metaflotpy.ejemplo.pe;#server_name $DOMINIO;#" "$CONF"
-    ok "sitio configurado para $DOMINIO"
+    ok "sitio HTTP para $DOMINIO (el certificado se emite después con certbot)"
 else
+    sed "s#/opt/metaflotpy#$RAIZ#g" "$RAIZ/app/despliegue/linux/nginx-metaflotpy.conf" > "$CONF"
     # Sin dominio: se atiende cualquier nombre y se desactiva el sitio por
     # defecto de Nginx, que si no capturaría las peticiones a la IP.
     sed -i "s#server_name metaflotpy.ejemplo.pe;#server_name _;#" "$CONF"
@@ -125,7 +141,12 @@ ok "Nginx recargado"
 
 # --- Comprobación de extremo a extremo ---
 IP=$(hostname -I 2>/dev/null | awk '{print $1}')
-if curl -fsS --max-time 10 -H "Host: ${DOMINIO:-localhost}" http://127.0.0.1/salud >/dev/null; then
+if [[ $CON_TLS -eq 1 ]]; then
+    PRUEBA=(curl -fsS --max-time 10 --resolve "$DOMINIO:443:127.0.0.1" "https://$DOMINIO/salud")
+else
+    PRUEBA=(curl -fsS --max-time 10 -H "Host: ${DOMINIO:-localhost}" http://127.0.0.1/salud)
+fi
+if "${PRUEBA[@]}" >/dev/null; then
     ok "la aplicación responde a través de Nginx"
 else
     error "Nginx no está entregando la aplicación. Revisa /var/log/nginx/metaflotpy.error.log"
@@ -135,7 +156,12 @@ echo
 echo "────────────────────────────────────────────────────────────"
 echo " MetaFlotPy instalado y funcionando."
 echo
-if [[ -n "$DOMINIO" ]]; then
+if [[ $CON_TLS -eq 1 ]]; then
+    echo "   https://$DOMINIO"
+    echo
+    echo " El certificado ya existía y se reutilizó: no hace falta certbot."
+    echo " Su renovación automática (certbot.timer) sigue funcionando."
+elif [[ -n "$DOMINIO" ]]; then
     echo "   http://$DOMINIO"
     echo
     echo " Para activar HTTPS, con el dominio ya apuntando a este"
