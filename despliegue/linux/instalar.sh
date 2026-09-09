@@ -146,7 +146,15 @@ if [[ $CON_TLS -eq 1 ]]; then
 else
     PRUEBA=(curl -fsS --max-time 10 -H "Host: ${DOMINIO:-localhost}" http://127.0.0.1/salud)
 fi
-if "${PRUEBA[@]}" >/dev/null; then
+# Tras un reload, los procesos nuevos de Nginx tardan un instante en tomar
+# la configuración; mientras tanto los viejos siguen sirviendo la anterior.
+# Por eso se reintenta en lugar de dar por fallido al primer intento.
+LOGRADO=0
+for _ in $(seq 1 10); do
+    if "${PRUEBA[@]}" >/dev/null 2>&1; then LOGRADO=1; break; fi
+    sleep 2
+done
+if [[ $LOGRADO -eq 1 ]]; then
     ok "la aplicación responde a través de Nginx"
 else
     error "Nginx no está entregando la aplicación. Revisa /var/log/nginx/metaflotpy.error.log"
